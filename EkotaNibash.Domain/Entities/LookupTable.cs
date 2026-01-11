@@ -1,7 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-
-namespace EkotaNibash.Domain
+﻿namespace EkotaNibash.Domain
 {
     public abstract class BaseLookup
     {
@@ -11,7 +8,7 @@ namespace EkotaNibash.Domain
         public string Name { get; set; }
         public string Description { get; set; }
     }
-   
+
     public class ExpenseType : BaseLookup { }
     public class DocumentType : BaseLookup { }
 }

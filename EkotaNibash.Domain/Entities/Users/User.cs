@@ -1,7 +1,4 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-
-namespace EkotaNibash.Domain
+﻿namespace EkotaNibash.Domain
 {
     public class User
     {
@@ -20,7 +17,7 @@ namespace EkotaNibash.Domain
 
     public enum Roles
     {
-        [Display(Name = "Administrator"),  Description("SA")]
+        [Display(Name = "Administrator"), Description("SA")]
         Administrator = 1,
         [Display(Name = "Admin"), Description("AD")]
         Admin = 2,

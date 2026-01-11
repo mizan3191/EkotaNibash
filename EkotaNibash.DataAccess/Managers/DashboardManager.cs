@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace EkotaNibash.DataAccess.Managers
+﻿namespace EkotaNibash.DataAccess
 {
     public class DashboardManager : BaseDataManager, IDashboard
     {

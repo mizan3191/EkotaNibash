@@ -1,6 +1,4 @@
-﻿using System.IO.Compression;
-
-namespace EkotaNibash.DataAccess
+﻿namespace EkotaNibash.DataAccess
 {
     public class MemberDocumentManager : BaseDataManager, IMemberDocument
     {
@@ -41,34 +39,6 @@ namespace EkotaNibash.DataAccess
         public MemberDocument GetDocument(int id)
         {
             return FindEntity<MemberDocument>(id);
-        }
-
-        public IList<DocumentListDTO> GetAllReferralDocuments(int memberId)
-        {
-            try
-            {
-
-                var qry = from docs in _dbContext.MemberDocuments
-                          .Include(x => x.DocumentType)
-                       .Where(x => x.EkotaMemberId == memberId)
-                          select new DocumentListDTO
-                          {
-                              Id = docs.Id,
-                              EkotaMemberId = docs.EkotaMemberId,
-                              DocumentType = docs.DocumentType.Description,
-                              DocumentName = docs.DocumentName,
-                              DocumentDate = docs.DocumentDate.Value,
-
-                          };
-
-                return qry.OrderByDescending(x => x.Id)
-                    .AsNoTracking()
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString()); throw;
-            }
         }
 
         public IList<DocumentListDTO> GetAllMemberDocuments(int memberId)
@@ -143,32 +113,6 @@ namespace EkotaNibash.DataAccess
                 throw;
 
             }
-        }
-
-        public (string zipFilePath, string zipFileName) DowanloadDoc(IList<CommonDocumentDTO> commonDocument)
-        {
-            string zipFilePath = Path.GetTempFileName();
-            if (System.IO.File.Exists(zipFilePath))
-            {
-                System.IO.File.Delete(zipFilePath);
-            }
-            using (var archive = ZipFile.Open(zipFilePath, ZipArchiveMode.Create))
-            {
-                foreach (var doc in commonDocument)
-                {
-                    string entryName = doc.FileName;
-                    var entry = archive.CreateEntry(entryName);
-
-                    using (var entryStream = entry.Open())
-                    {
-                        entryStream.Write(doc.File, 0, doc.File.Length);
-                    }
-                }
-            }
-            string formattedDateTime = DateTime.Now.ToString("MMddyy_HHmm");
-            string zipFileName = $"Documents_{formattedDateTime}.zip";
-
-            return (zipFilePath, zipFileName);
         }
     }
 }

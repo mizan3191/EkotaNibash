@@ -1,6 +1,3 @@
-using EkotaNibash.DataAccess.Managers;
-using EkotaNibash.Domain;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

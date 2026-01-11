@@ -5,7 +5,6 @@
         int CreateUser(User user);
         bool UpdateUser(User user);
         IList<AppUsersDTO> GetUsers();
-        //IList<AppRoles> GetRoles();
         User GetUser(int id);
         User GetLoginUser(LoginModel loginModel);
         bool DeleteUser(int id);

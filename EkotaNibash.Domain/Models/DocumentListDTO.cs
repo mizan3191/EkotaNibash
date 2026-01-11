@@ -10,12 +10,4 @@
         public DateTime DocumentDate { get; set; }
         public string Comments { get; set; }
     }
-
-    public class CommonDocumentDTO
-    {
-        public int Id { get; set; }
-        public string FileName { get; set; }
-
-        public byte[] File { get; set; }
-    }
 }

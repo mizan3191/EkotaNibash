@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace EkotaNibash.Domain
+﻿namespace EkotaNibash.Domain
 {
     public class LoginModel
     {

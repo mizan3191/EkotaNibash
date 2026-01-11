@@ -7,7 +7,5 @@
         MemberDocument GetDocument(int documentId);
         IList<DocumentListDTO> GetAllMemberDocuments(int clientId);
         int CreateDocument(MemberDocument report_DocumentData);
-
-        (string zipFilePath, string zipFileName) DowanloadDoc(IList<CommonDocumentDTO> commonDocument);
     }
 }
