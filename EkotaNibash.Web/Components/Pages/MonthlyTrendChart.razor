@@ -1,0 +1,119 @@
+﻿@* @using Radzen
+@using Radzen.Blazor
+@inject IDashboard DashboardManager
+
+<div class="card h-100">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Monthly Trend Analysis</h5>
+    </div>
+    <div class="card-body">
+        @if (monthlyData.Any())
+        {
+            <RadzenChart Style="min-height: 350px;">
+                <RadzenLineSeries Data="@monthlyData" 
+                                 CategoryProperty="MonthYear" 
+                                 ValueProperty="Payments"
+                                 Title="Payments"
+                                 Smooth="true">
+                    <RadzenSeriesDataLabels Visible="true" Format="C" />
+                </RadzenLineSeries>
+                
+                <RadzenLineSeries Data="@monthlyData" 
+                                 CategoryProperty="MonthYear" 
+                                 ValueProperty="Expenses"
+                                 Title="Expenses"
+                                 Smooth="true">
+                    <RadzenSeriesDataLabels Visible="true" Format="C" />
+                </RadzenLineSeries>
+                
+                <RadzenColumnSeries Data="@monthlyData" 
+                                   CategoryProperty="MonthYear" 
+                                   ValueProperty="NewMembers"
+                                   Title="New Members">
+                    <RadzenSeriesDataLabels Visible="true" />
+                </RadzenColumnSeries>
+                
+                <RadzenValueAxis>
+                    <RadzenAxisTitle Text="Amount (৳)" />
+                    <RadzenNumericAxisFormatter FormatString="C" />
+                </RadzenValueAxis>
+                
+                <RadzenCategoryAxis>
+                    <RadzenAxisTitle Text="Month" />
+                </RadzenCategoryAxis>
+                
+                <RadzenLegend Position="LegendPosition.Bottom" />
+                
+                <RadzenTooltipTemplate>
+                    @{
+                        var data = context as SeriesDataPoint;
+                        var monthData = monthlyData.FirstOrDefault(m => m.MonthYear == data.Category.ToString());
+                    }
+                    @if (monthData != null)
+                    {
+                        <div class="p-2">
+                            <strong>@monthData.MonthYear</strong>
+                            <div class="small">
+                                Payments: @monthData.Payments.ToString("C")<br/>
+                                Expenses: @monthData.Expenses.ToString("C")<br/>
+                                New Members: @monthData.NewMembers<br/>
+                                Balance: @((monthData.Payments - monthData.Expenses).ToString("C"))
+                            </div>
+                        </div>
+                    }
+                </RadzenTooltipTemplate>
+            </RadzenChart>
+        }
+        else
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-chart-line fa-3x mb-3"></i>
+                <p>No trend data available</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<MonthlyTrendData> monthlyData = new();
+    private bool isLoading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTrendData();
+    }
+    
+    private async Task LoadTrendData()
+    {
+        try
+        {
+            var summary = await DashboardManager.GetMonthlySummaryAsync(12);
+            
+            monthlyData = summary.Select(m => new MonthlyTrendData
+            {
+                MonthYear = m.MonthYear,
+                Payments = (double)m.TotalPayments,
+                Expenses = (double)m.TotalExpenses,
+                NewMembers = m.NewMembers,
+                Balance = (double)(m.TotalPayments - m.TotalExpenses)
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading trend data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private class MonthlyTrendData
+    {
+        public string MonthYear { get; set; }
+        public double Payments { get; set; }
+        public double Expenses { get; set; }
+        public int NewMembers { get; set; }
+        public double Balance { get; set; }
+    }
+} *@

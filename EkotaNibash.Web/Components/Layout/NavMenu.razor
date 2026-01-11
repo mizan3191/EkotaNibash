@@ -1,0 +1,51 @@
+﻿@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">@CompanyInfo.Name</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable">
+    <nav class="flex-column">
+
+        <!-- SALES Section -->
+        <AuthorizeView Roles="Admin,Manager,Administrator">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="members">
+                        <span class="nav-menu" aria-hidden="true"></span> Members
+                    </NavLink>
+                </div>
+           
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="Expenses">
+                        <span class="nav-menu" aria-hidden="true"></span> Expenses
+                    </NavLink>
+                </div>
+           
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="ManageUser">
+                        <span class="nav-menu" aria-hidden="true"></span> Manage User
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+    </nav>
+</div>
+
+@code {
+    [Inject]
+    private ICompany m_Company { get; set; }
+
+    private CompanyInfo CompanyInfo { get; set; }
+
+    protected override void OnInitialized()
+    {
+        CompanyInfo = m_Company.GetCompanyInfo();
+    }
+}

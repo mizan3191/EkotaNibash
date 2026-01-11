@@ -1,0 +1,241 @@
+﻿@* @using Radzen
+@using Radzen.Blazor
+@inject IDashboard DashboardManager
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Payment Distribution</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" @bind="showPaymentAsDonut">
+                    <label class="form-check-label">Donut View</label>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (paymentChartData.Any())
+                {
+                    <RadzenChart Style="min-height: 300px;">
+                        @if (showPaymentAsDonut)
+                        {
+                            <RadzenDonutSeries Data="@paymentChartData" 
+                                              CategoryProperty="Label" 
+                                              TitleProperty="Label"
+                                              ValueProperty="Value">
+                                <RadzenSeriesDataLabels Visible="true" 
+                                                      Position="PieSeriesDataLabelsPosition.Outside"
+                                                      Format="C">
+                                    <Template>
+                                        @{
+                                            var data = context as SeriesDataPoint;
+                                            var percentage = data != null ? data.Percentage : 0;
+                                        }
+                                        @data.Category: @data.Value.ToString("C") (@percentage.ToString("0.0")%)
+                                    </Template>
+                                </RadzenSeriesDataLabels>
+                                <RadzenValueAxis>
+                                    <RadzenNumericAxisFormatter FormatString="C" />
+                                </RadzenValueAxis>
+                            </RadzenDonutSeries>
+                        }
+                        else
+                        {
+                            <RadzenColumnSeries Data="@paymentChartData" 
+                                               CategoryProperty="Label" 
+                                               ValueProperty="Value"
+                                               Title="Payment Types">
+                                <RadzenValueAxis>
+                                    <RadzenAxisTitle Text="Amount (৳)" />
+                                    <RadzenNumericAxisFormatter FormatString="C" />
+                                </RadzenValueAxis>
+                                <RadzenCategoryAxis>
+                                    <RadzenAxisTitle Text="Payment Type" />
+                                </RadzenCategoryAxis>
+                            </RadzenColumnSeries>
+                        }
+                        <RadzenLegend Position="LegendPosition.Bottom" />
+                    </RadzenChart>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                        <p>No payment data available</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Expense Distribution</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn @(showExpenseAsBar ? "btn-primary" : "btn-outline-primary")" 
+                            @onclick="() => ToggleExpenseChart(true)">
+                        <i class="fas fa-chart-bar"></i> Bar
+                    </button>
+                    <button type="button" class="btn @(!showExpenseAsBar ? "btn-primary" : "btn-outline-primary")" 
+                            @onclick="() => ToggleExpenseChart(false)">
+                        <i class="fas fa-chart-line"></i> Line
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (expenseChartData.Any())
+                {
+                    <RadzenChart Style="min-height: 300px;">
+                        @if (showExpenseAsBar)
+                        {
+                            <RadzenColumnSeries Data="@expenseChartData" 
+                                               CategoryProperty="Label" 
+                                               ValueProperty="Value"
+                                               Title="Expenses">
+                                <RadzenValueAxis>
+                                    <RadzenAxisTitle Text="Amount (৳)" />
+                                    <RadzenNumericAxisFormatter FormatString="C" />
+                                </RadzenValueAxis>
+                                <RadzenCategoryAxis>
+                                    <RadzenAxisTitle Text="Expense Type" />
+                                    <RadzenCategoryAxisTicks StrokeWidth="0" />
+                                </RadzenCategoryAxis>
+                            </RadzenColumnSeries>
+                        }
+                        else
+                        {
+                            <RadzenLineSeries Data="@expenseChartData" 
+                                             CategoryProperty="Label" 
+                                             ValueProperty="Value"
+                                             Title="Expenses">
+                                <RadzenValueAxis>
+                                    <RadzenAxisTitle Text="Amount (৳)" />
+                                    <RadzenNumericAxisFormatter FormatString="C" />
+                                </RadzenValueAxis>
+                                <RadzenCategoryAxis>
+                                    <RadzenAxisTitle Text="Expense Type" />
+                                    <RadzenCategoryAxisTicks StrokeWidth="0" />
+                                </RadzenCategoryAxis>
+                            </RadzenLineSeries>
+                        }
+                    </RadzenChart>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                        <p>No expense data available</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DashboardSummary Summary { get; set; }
+    private List<ChartDataItem> paymentChartData = new();
+    private List<ChartDataItem> expenseChartData = new();
+    private bool showPaymentAsDonut = true;
+    private bool showExpenseAsBar = true;
+    private bool isLoading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadChartData();
+    }
+    
+    private async Task LoadChartData()
+    {
+        isLoading = true;
+        
+        try
+        {
+            Summary = await DashboardManager.GetDashboardSummaryAsync();
+            
+            if (Summary != null)
+            {
+                // Prepare payment chart data
+                paymentChartData = Summary.PaymentTypeSummaries
+                    .OrderByDescending(p => p.TotalAmount)
+                    .Select(p => new ChartDataItem
+                    {
+                        Label = p.PaymentType,
+                        Value = (double)p.TotalAmount,
+                        Percentage = p.Percentage,
+                        Color = GetPaymentTypeColor(p.PaymentType)
+                    })
+                    .ToList();
+                
+                // Prepare expense chart data
+                expenseChartData = Summary.ExpenseTypeSummaries
+                    .OrderByDescending(e => e.TotalAmount)
+                    .Select(e => new ChartDataItem
+                    {
+                        Label = e.ExpenseType,
+                        Value = (double)e.TotalAmount,
+                        Percentage = e.Percentage,
+                        Color = GetExpenseTypeColor(e.ExpenseType)
+                    })
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading chart data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private void ToggleExpenseChart(bool showAsBar)
+    {
+        showExpenseAsBar = showAsBar;
+        StateHasChanged();
+    }
+    
+    private string GetPaymentTypeColor(string paymentType)
+    {
+        return paymentType switch
+        {
+            "Monthly" => "#4e73df",
+            "Installment" => "#1cc88a",
+            "Fine" => "#e74a3b",
+            _ => GetRandomColor()
+        };
+    }
+    
+    private string GetExpenseTypeColor(string expenseType)
+    {
+        return expenseType switch
+        {
+            string s when s.Contains("Electric") => "#f6c23e",
+            string s when s.Contains("Salary") => "#36b9cc",
+            string s when s.Contains("Rent") => "#6f42c1",
+            string s when s.Contains("Maintenance") => "#fd7e14",
+            _ => GetRandomColor()
+        };
+    }
+    
+    private string GetRandomColor()
+    {
+        var colors = new[] { "#4e73df", "#1cc88a", "#36b9cc", "#f6c23e", "#e74a3b", "#858796" };
+        return colors[new Random().Next(colors.Length)];
+    }
+    
+    private class ChartDataItem
+    {
+        public string Label { get; set; }
+        public double Value { get; set; }
+        public double Percentage { get; set; }
+        public string Color { get; set; }
+    }
+    
+    public async Task RefreshCharts()
+    {
+        await LoadChartData();
+        StateHasChanged();
+    }
+} *@

@@ -1,0 +1,342 @@
+﻿@page "/"
+
+@attribute [Authorize]
+
+
+<style>
+    h1 {
+        color: #333;
+    }
+
+    p {
+        color: #555;
+        font-size: 18px;
+    }
+
+    .welcome-container {
+        text-align: center; /* Centers only the text */
+    }
+</style>
+
+<div class="welcome-container">
+    <h1>Welcome to @CompanyInfo.Name!</h1>
+    <p>@CompanyInfo.CompanyMessage</p>
+</div>
+
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Dashboard</h1>
+        <div>
+            <button class="btn btn-primary" @onclick="RefreshDashboard">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+
+    <div class="row mb-4">
+        @if (isLoading)
+        {
+            <!-- Loading Skeleton -->
+            @foreach (var _ in Enumerable.Range(0, 4))
+            {
+                <div class="col-md-3 mb-3">
+                    <div class="card skeleton-card">
+                        <div class="card-body">
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-6"></span>
+                                <h3 class="placeholder-glow mt-2">
+                                    <span class="placeholder col-8"></span>
+                                </h3>
+                                <small class="placeholder-glow">
+                                    <span class="placeholder col-10"></span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else if (Summary != null)
+        {
+            <div class="col-md-3 mb-3">
+                <div class="card summary-card border-start border-primary border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Total Members</h6>
+                                <h3 class="card-title">@Summary.TotalMembers</h3>
+                                <div class="small text-muted">
+                                    <span class="text-success">@Summary.ActiveMembers Active</span> •
+                                    <span class="text-secondary">@Summary.InactiveMembers Inactive</span>
+                                </div>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="fas fa-users fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card summary-card border-start border-success border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Total Payments</h6>
+                                <h3 class="card-title">@FormatCurrency(Summary.TotalPayments)</h3>
+                                <div class="small text-muted">
+                                    This Month: <span class="text-success">@FormatCurrency(Summary.ThisMonthPayment)</span>
+                                </div>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="fas fa-money-bill-wave fa-2x text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card summary-card border-start border-warning border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Total Expenses</h6>
+                                <h3 class="card-title">@FormatCurrency(Summary.TotalExpenses)</h3>
+                                <div class="small text-muted">
+                                    This Month: <span class="text-warning">@FormatCurrency(Summary.ThisMonthExpense)</span>
+                                </div>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                                <i class="fas fa-receipt fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card summary-card border-start @GetBalanceColor(Summary.Balance) border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Current Balance</h6>
+                                <h3 class="card-title">@FormatCurrency(Summary.Balance)</h3>
+                                <div class="small text-muted">
+                                    @GetBalanceStatus(Summary.Balance)
+                                </div>
+                            </div>
+                            <div class="@GetBalanceBgColor(Summary.Balance) p-3 rounded-circle">
+                                <i class="fas fa-balance-scale fa-2x @GetBalanceTextColor(Summary.Balance)"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Failed to load summary data.
+                    <button class="btn btn-sm btn-outline-danger ms-2" @onclick="LoadSummary">Retry</button>
+                </div>
+            </div>
+        }
+    </div>
+
+
+    <div class="row mt-4">
+        <!-- Due Members Table -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">Due Payments List</h5>
+                </div>
+                <div class="card-body">
+                    @if (DueMembers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Mobile</th>
+                                        <th>Months Due</th>
+                                        <th>Due Amount</th>
+                                        <th>Last Payment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int dueCounter = 1;
+                                    }
+                                    @foreach (var member in DueMembers.OrderBy(x => x.Name))
+                                    {
+                                        <tr>
+                                            <td>@member.Name</td>
+                                            <td>@member.MobileNumber</td>
+                                            <td>
+                                                <span class="badge bg-danger">@member.MonthsDue months</span>
+                                                <small class="text-muted">(@member.TotalMonthsPaid/@member.TotalMonthsMembership)</small>
+                                            </td>
+                                            <td class="text-danger fw-bold">@member.DueAmount.ToString("C")</td>
+                                            <td>@member.LastPaymentDate?.ToString("dd/MM/yyyy")</td>
+                                        </tr>
+                                        dueCounter++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            No due payments found. All members are up to date!
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Advance Payments Table -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Advance Payments List</h5>
+                </div>
+                <div class="card-body">
+                    @if (AdvanceMembers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Mobile</th>
+                                        <th>Advance Months</th>
+                                        <th>Advance Amount</th>
+                                        <th>Total Paid</th>
+                                        <th>Last Payment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int advanceCounter = 1;
+                                    }
+                                    @foreach (var member in AdvanceMembers.OrderBy(x => x.Name))
+                                    {
+                                        <tr>
+                                            <td>@member.Name</td>
+                                            <td>@member.MobileNumber</td>
+                                            <td>
+                                                <span class="badge bg-success">@member.AdvanceMonths months</span>
+                                            </td>
+                                            <td class="text-success fw-bold">@member.AdvanceAmount.ToString("C")</td>
+                                            <td>@member.TotalPaid.ToString("C")</td>
+                                            <td>@member.LastPaymentDate?.ToString("dd/MM/yyyy")</td>
+                                        </tr>
+                                        advanceCounter++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No advance payments found.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Inject]
+    private ICompany m_Company { get; set; }
+
+    [Inject]
+    private IDashboard DashboardManager { get; set; }
+
+    private CompanyInfo CompanyInfo { get; set; } = new();
+
+    private DashboardSummary Summary { get; set; } = new();
+
+    private bool isLoading = true;
+
+    public List<MemberDueDto> DueMembers { get; set; } = new();
+    public List<MemberAdvanceDto> AdvanceMembers { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        
+        await LoadSummary();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        CompanyInfo = m_Company.GetCompanyInfo();
+        DueMembers = await DashboardManager.GetMembersWithDueAsync();
+        AdvanceMembers = await DashboardManager.GetMembersWithAdvanceAsync();
+    }
+
+    private async Task RefreshDashboard()
+    {
+        await LoadDashboardData();
+        StateHasChanged();
+    }
+
+    private async Task LoadSummary()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            Summary = await DashboardManager.GetDashboardSummaryAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading summary: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C");
+    }
+
+    private string GetBalanceColor(decimal balance)
+    {
+        return balance >= 0 ? "border-info" : "border-danger";
+    }
+
+    private string GetBalanceBgColor(decimal balance)
+    {
+        return balance >= 0 ? "bg-info bg-opacity-10" : "bg-danger bg-opacity-10";
+    }
+
+    private string GetBalanceTextColor(decimal balance)
+    {
+        return balance >= 0 ? "text-info" : "text-danger";
+    }
+
+    private string GetBalanceStatus(decimal balance)
+    {
+        return balance >= 0 ? "Positive Balance" : "Negative Balance";
+    }
+}

@@ -1,0 +1,530 @@
+﻿@page "/members/add"
+@page "/members/edit/{Id:int}"
+@inject IEkotaMember m_Member
+@inject NavigationManager Navigation
+@inject DialogService DialogService
+
+<Message @ref="notificationComponent" />
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>@(IsEditMode ? "Edit Ekota Member" : "Add Ekota Member")</PageTitle>
+
+<div class="container-fluid">
+    <!-- Dashboard Style Header for Member Add/Edit Page -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-@(IsEditMode ? "warning" : "primary")">
+                                    <i class="fas @(IsEditMode ? "fa-edit" : "fa-user-plus") text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                <h1 class="display-6 fw-bold mb-2">
+                                    @(IsEditMode ? "Edit Member" : "Add New Member")
+                                </h1>
+                                <div class="header-meta">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @if (IsEditMode && ekotaMember != null && !string.IsNullOrEmpty(ekotaMember.Name))
+                                        {
+                                            <div class="meta-item">
+                                                <i class="fas fa-user-tag text-primary me-1"></i>
+                                                <span class="fw-medium">@ekotaMember.Name</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="fas fa-hashtag text-info me-1"></i>
+                                                <span class="fw-medium">ID: @ekotaMember.MembershipNo</span>
+                                            </div>
+                                        }
+                                        <div class="meta-item">
+                                            <i class="fas fa-calendar-alt text-success me-1"></i>
+                                            <span>@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</span>
+                                        </div>
+                                        @if (IsEditMode && ekotaMember != null && ekotaMember.ApplicationDate != default)
+                                        {
+                                            <div class="meta-item">
+                                                <i class="fas fa-calendar-check text-warning me-1"></i>
+                                                <span>Member Since: @ekotaMember.ApplicationDate.ToString("dd MMM yyyy")</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="header-actions mt-3 mt-lg-0">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <RadzenButton Text="Back to Members"
+                                              Icon="list"
+                                              Click="Cancel"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Large" />
+                            </div>
+                            @if (IsEditMode && ekotaMember != null && ekotaMember.MobileNumber != null)
+                            {
+                                <div class="mt-3 text-end">
+                                    <div class="text-muted small">Contact</div>
+                                    <div class="h5 fw-bold text-primary">@ekotaMember.MobileNumber</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="header-description">
+                            <p class="lead mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                @(IsEditMode ?
+                                                                "Update the member details and information below." :
+                                                                "Fill in the member information to register a new Ekota member.")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .icon-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .header-meta .meta-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .header-content h1 {
+            color: #2d3748;
+        }
+
+        .header-description {
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            color: #4a5568;
+        }
+
+            .header-description .lead {
+                font-size: 1.1rem;
+            }
+    </style>
+
+    <EditForm Model="ekotaMember" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-@(IsEditMode ? "warning" : "primary") text-white">
+                <h5 class="mb-0">
+                    <i class="fas @(IsEditMode ? "fa-edit" : "fa-id-card") me-2"></i>
+                    @(IsEditMode ? "Edit Member Information" : "Member Information")
+                </h5>
+            </div>
+            <div class="card-body">
+                <ValidationSummary class="alert alert-danger" />
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "primary") border-bottom pb-2">
+                        <i class="fas fa-user-circle me-2"></i>Basic Information
+                    </h6>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Membership Number *" />
+                            <RadzenTextBox @bind-Value="ekotaMember.MembershipNo" Placeholder="Enter membership number"
+                                           Class="w-100" />
+                            <ValidationMessage For="@(() => ekotaMember.MembershipNo)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Full Name *" />
+                            <RadzenTextBox @bind-Value="ekotaMember.Name" Placeholder="Enter full name"
+                                           Class="w-100" />
+                            <ValidationMessage For="@(() => ekotaMember.Name)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Date of Birth *" />
+                            <RadzenDatePicker @bind-Value="ekotaMember.DateOfBirth"
+                                              DateFormat="dd/MM/yyyy" Class="w-100" />
+                            <ValidationMessage For="@(() => ekotaMember.DateOfBirth)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="NID Number *" />
+                            <RadzenTextBox @bind-Value="ekotaMember.NIDNumber"
+                                           Placeholder="Enter NID number" Class="w-100" />
+                            <ValidationMessage For="@(() => ekotaMember.NIDNumber)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Father's Name" />
+                            <RadzenTextBox @bind-Value="ekotaMember.FatherName"
+                                           Placeholder="Enter father's name" Class="w-100" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Mother's Name" />
+                            <RadzenTextBox @bind-Value="ekotaMember.MotherName"
+                                           Placeholder="Enter mother's name" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "primary") border-bottom pb-2">
+                        <i class="fas fa-address-card me-2"></i>Contact Information
+                    </h6>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Occupation" />
+                            <RadzenTextBox @bind-Value="ekotaMember.Occupation"
+                                           Placeholder="Enter occupation" Class="w-100" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Mobile Number *" />
+                            <RadzenTextBox @bind-Value="ekotaMember.MobileNumber"
+                                           Placeholder="01XXXXXXXXX" Class="w-100" />
+                            <ValidationMessage For="@(() => ekotaMember.MobileNumber)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Email Address" />
+                            <RadzenTextBox @bind-Value="ekotaMember.Email"
+                                           Placeholder="email@example.com" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Blood Group" />
+                            <RadzenDropDown Data="@bloodGroups" @bind-Value="ekotaMember.BloodGroup"
+                                            TextProperty="Value" ValueProperty="Key"
+                                            Placeholder="Select blood group" Class="w-100" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Application Date *" />
+                            <RadzenDatePicker @bind-Value="ekotaMember.ApplicationDate"
+                                              DateFormat="dd/MM/yyyy" Class="w-100" />
+                            <ValidationMessage For="@(() => ekotaMember.ApplicationDate)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "primary") border-bottom pb-2">
+                        <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                    </h6>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <RadzenLabel Text="Present Address" />
+                            <RadzenTextArea @bind-Value="ekotaMember.PresentAddress"
+                                            Placeholder="Enter present address" Rows="3" Class="w-100" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <RadzenLabel Text="Permanent Address" />
+                            <RadzenTextArea @bind-Value="ekotaMember.PermanentAddress"
+                                            Placeholder="Enter permanent address" Rows="3" Class="w-100" />
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input"
+                                       @onchange="CopyPresentAddress" />
+                                <label class="form-check-label small">
+                                    Same as present address
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (ekotaMember.Id <= 0)
+                {
+                    <div class="row g-3 mb-4">
+                        <h6 class="text-@(IsEditMode ? "warning" : "primary") border-bottom pb-2">
+                            <i class="fas fa-camera me-2"></i>Member Photo
+                        </h6>
+
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <RadzenLabel Text="Upload Photo (Optional)" />
+
+                                @if (ekotaMember.File != null && ekotaMember.File.Length > 0)
+                                {
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <img src="@GetMemberImageSrc()"
+                                                     alt="Member Photo"
+                                                     class="img-thumbnail"
+                                                     style="width: 100px; height: 100px; object-fit: cover;" />
+                                            </div>
+                                            <div>
+                                                <p class="mb-1">
+                                                    <strong>Current Photo:</strong> @ekotaMember.FileName
+                                                </p>
+                                                <p class="mb-1 text-muted small">
+                                                    Size: @((ekotaMember.File.Length / 1024.0).ToString("0.00")) KB
+                                                </p>
+                                                <RadzenButton Text="Remove Photo"
+                                                              Icon="delete"
+                                                              Click="@RemoveMemberPhoto"
+                                                              ButtonStyle="ButtonStyle.Danger"
+                                                              Size="ButtonSize.Medium" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                <RadzenUpload ChooseLabel="@(ekotaMember.File != null ? "Change Photo" : "Choose Photo")"
+                                              Accept="image/*"
+                                              Multiple="false"
+                                              Class="w-100"
+                                              Change="@OnMemberFileUpload" />
+                                <small class="text-muted d-block mt-1">
+                                    Supported formats: JPG, PNG, GIF. Max size: 2MB
+                                </small>
+                                @if (memberUploadError)
+                                {
+                                    <div class="alert alert-danger mt-2 small" role="alert">
+                                        @memberErrorMessage
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+
+                <div class="col-md-12">
+                    <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Type="submit" Class="m-2" />
+                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="Cancel" Class="m-2" />
+                </div>
+
+
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private EkotaMember ekotaMember = new();
+    private bool IsEditMode => Id > 0;
+    private bool isSubmitting = false;
+    private Message notificationComponent;
+
+    private bool memberUploadError = false;
+    private string memberErrorMessage = string.Empty;
+
+    private Dictionary<string, string> bloodGroups = new()
+    {
+        { "", "Select Blood Group" },
+        { "A_Positive", "A+" },
+        { "A_Negative", "A-" },
+        { "B_Positive", "B+" },
+        { "B_Negative", "B-" },
+        { "AB_Positive", "AB+" },
+        { "AB_Negative", "AB-" },
+        { "O_Positive", "O+" },
+        { "O_Negative", "O-" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode)
+        {
+            ekotaMember = await m_Member.GetByIdAsync(Id);
+        }
+        else
+        {
+            ekotaMember.ApplicationDate = DateTime.Today;
+            ekotaMember.DateOfBirth = DateTime.Today.AddYears(-30);
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            if (IsEditMode)
+            {
+                await m_Member.UpdateAsync(ekotaMember);
+                notificationComponent.Show("Added Summary", "Member has been updated successfully", NotificationSeverity.Success);
+            }
+            else
+            {
+                await m_Member.AddAsync(ekotaMember);
+                notificationComponent.Show("Added Summary", "Member has been Added successfully", NotificationSeverity.Success);
+            }
+
+            Navigation.NavigateTo("/members");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error: {ex.Message}", "Error");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void CopyPresentAddress(ChangeEventArgs e)
+    {
+        if ((bool?)e.Value == true)
+        {
+            ekotaMember.PermanentAddress = ekotaMember.PresentAddress;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/members");
+    }
+
+    private string GetMemberImageSrc()
+    {
+        if (ekotaMember.File != null && ekotaMember.File.Length > 0)
+        {
+            var base64 = Convert.ToBase64String(ekotaMember.File);
+            var mimeType = GetMimeType(ekotaMember.FileName);
+            return $"data:{mimeType};base64,{base64}";
+        }
+        return string.Empty;
+    }
+
+    private async Task OnMemberFileUpload(Radzen.UploadChangeEventArgs args)
+    {
+        memberUploadError = false;
+        memberErrorMessage = string.Empty;
+
+        try
+        {
+            var file = args.Files.FirstOrDefault();
+            if (file == null)
+                return;
+
+            // Check file size (2MB limit)
+            const long maxFileSize = 2 * 1024 * 1024; // 2MB
+            if (file.Size > maxFileSize)
+            {
+                memberUploadError = true;
+                memberErrorMessage = "File size exceeds 2MB limit.";
+                return;
+            }
+
+            // Check file type
+            var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var fileExtension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (!validExtensions.Contains(fileExtension))
+            {
+                memberUploadError = true;
+                memberErrorMessage = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
+                return;
+            }
+
+            // Read file into byte array
+            using (var stream = file.OpenReadStream())
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                ekotaMember.File = memoryStream.ToArray();
+                ekotaMember.FileName = file.Name;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            memberUploadError = true;
+            memberErrorMessage = $"Error uploading file: {ex.Message}";
+        }
+    }
+
+    private void RemoveMemberPhoto()
+    {
+        ekotaMember.File = null;
+        ekotaMember.FileName = null;
+        memberUploadError = false;
+        memberErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    // Add this MIME type helper method if not already present
+    private string GetMimeType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            _ => "image/jpeg"
+        };
+    }
+}

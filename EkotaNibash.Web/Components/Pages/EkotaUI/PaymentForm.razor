@@ -1,0 +1,495 @@
+﻿@page "/membership-payments/add/{MemberId:int}"
+@page "/membership-payments/edit/{Id:int}"
+@inject NavigationManager Navigation
+@inject IPayment m_Payment
+@inject IEkotaMember m_Member
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject DialogService DialogService
+
+<PageTitle>@(IsEditMode ? "Edit Payment" : "Add Payment")</PageTitle>
+
+<div class="container-fluid">
+    <!-- Dashboard Style Header for Add/Edit Page -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-@(IsEditMode ? "warning" : "primary")">
+                                    <i class="fas @(IsEditMode ? "fa-edit" : "fa-money-check-alt") text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                <h1 class="display-6 fw-bold mb-2">
+                                    @(IsEditMode ? "Edit Payment" : "Add New Payment")
+                                </h1>
+                                <div class="header-meta">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @if (memberInfo != null)
+                                        {
+                                            <div class="meta-item">
+                                                <i class="fas fa-user-tag text-primary me-1"></i>
+                                                <span class="fw-medium">@memberInfo.Name</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="fas fa-hashtag text-info me-1"></i>
+                                                <span class="fw-medium">ID: @memberInfo.MembershipNo</span>
+                                            </div>
+
+                                            <div class="meta-item">
+                                                <i class="fas fa-calendar-alt text-success me-1"></i>
+                                                <span>@memberInfo.DateOfBirth.ToString("dddd, MMMM dd, yyyy")</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="header-actions mt-3 mt-lg-0">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <RadzenButton Text="Back to Payments"
+                                              Icon="list"
+                                              Click="@(() => Navigation.NavigateTo($"/membership-payments/{MemberId}"))"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Large" />
+                                <RadzenButton Text="Back to Members"
+                                              Icon="people"
+                                              Click="BackToMembers"
+                                              ButtonStyle="ButtonStyle.Secondary"
+                                              Size="ButtonSize.Large" />
+                            </div>
+                            @if (IsEditMode && payment != null)
+                            {
+                                <div class="mt-3 text-end">
+                                    <div class="text-muted small">Payment Amount</div>
+                                    <div class="h4 fw-bold text-success">৳@payment.Amount.ToString("N2")</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="header-description">
+                            <p class="lead mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                @(IsEditMode ?
+                                                                "Update the payment details and document below." :
+                                                                "Fill in the payment information to record a new transaction.")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .icon-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .header-meta .meta-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .header-content h1 {
+            color: #2d3748;
+        }
+
+        .header-description {
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            color: #4a5568;
+        }
+
+            .header-description .lead {
+                font-size: 1.1rem;
+            }
+    </style>
+
+    <EditForm Model="payment" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-@(IsEditMode ? "warning" : "primary") text-white">
+                <h5 class="mb-0">
+                    <i class="fas @(IsEditMode ? "fa-edit" : "fa-money-bill-wave") me-2"></i>
+                    @(IsEditMode ? "Edit Payment Information" : "Payment Information")
+                </h5>
+            </div>
+            <div class="card-body">
+                <ValidationSummary class="alert alert-danger" />
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "primary") border-bottom pb-2">
+                        <i class="fas fa-money-check me-2"></i>Payment Details
+                    </h6>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Amount *" />
+                            <RadzenNumeric @bind-Value="payment.Amount"
+                                           Format="F2"
+                                           Placeholder="0.00"
+                                           TValue="decimal"
+                                           Class="w-100" />
+                            <ValidationMessage For="@(() => payment.Amount)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Payment Type *" />
+                            <RadzenDropDown Data="@paymentTypes" @bind-Value="payment.PaymentType"
+                                            TextProperty="Value" ValueProperty="Key"
+                                            Placeholder="Select payment type"
+                                            Class="w-100" />
+                            <ValidationMessage For="@(() => payment.PaymentType)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Payment Date *" />
+                            <RadzenDatePicker @bind-Value="payment.PaymentDate"
+                                              DateFormat="dd/MM/yyyy"
+                                              Class="w-100" />
+                            <ValidationMessage For="@(() => payment.PaymentDate)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                </div>
+
+
+                @if (payment.Id <= 0)
+                {
+                    <div class="row g-3 mb-4">
+                        <h6 class="text-@(IsEditMode ? "warning" : "primary") border-bottom pb-2">
+                            <i class="fas fa-file-invoice me-2"></i>Payment Proof / Receipt
+                        </h6>
+
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <RadzenLabel Text="Upload Payment Proof (Optional)" />
+
+                                @if (payment.File != null && payment.File.Length > 0)
+                                {
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <div class="file-preview bg-light p-3 rounded text-center">
+                                                    <i class="fas fa-file-invoice-dollar fa-2x text-@(IsEditMode ? "warning" : "primary") mb-2"></i>
+                                                    <p class="mb-0 small">@payment.FileName</p>
+                                                    <p class="mb-0 text-muted small">
+                                                        @((payment.File.Length / 1024.0).ToString("0.00")) KB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="d-flex gap-2">
+                                                    <RadzenButton Text="Download"
+                                                                  Icon="download"
+                                                                  Click="@DownloadDocument"
+                                                                  ButtonStyle="ButtonStyle.Secondary"
+                                                                  Size="ButtonSize.Medium" />
+                                                    <RadzenButton Text="Remove"
+                                                                  Icon="delete"
+                                                                  Click="@RemoveDocument"
+                                                                  ButtonStyle="ButtonStyle.Danger"
+                                                                  Size="ButtonSize.Medium" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                <RadzenUpload ChooseLabel="@(payment.File != null ? "Change Document" : "Choose Document")"
+                                              Accept="image/*,.pdf,.doc,.docx"
+                                              Multiple="false"
+                                              Class="w-100"
+                                              Change="@OnFileUpload" />
+                                <small class="text-muted d-block mt-1">
+                                    Supported formats: PDF, DOC, DOCX, JPG, PNG. Max size: 5MB
+                                </small>
+                                @if (uploadError)
+                                {
+                                    <div class="alert alert-danger mt-2 small" role="alert">
+                                        @errorMessage
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "primary") border-bottom pb-2">
+                        <i class="fas fa-sticky-note me-2"></i>Additional Notes
+                    </h6>
+
+                    <div class="col-12">
+                        <div class="form-group">
+                            <RadzenLabel Text="Notes" />
+                            <RadzenTextArea @bind-Value="payment.Notes"
+                                            Placeholder="Add any additional notes or remarks..."
+                                            Rows="2" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-md-12">
+                    <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Type="submit" Class="m-2" />
+                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="Cancel" Class="m-2" />
+                </div>
+
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public int MemberId { get; set; }
+
+    private MembershipPayment payment = new();
+    private EkotaMember? memberInfo;
+    private bool IsEditMode => Id > 0;
+    private bool isSubmitting = false;
+    private bool uploadError = false;
+    private string errorMessage = string.Empty;
+
+    private Dictionary<PaymentType, string> paymentTypes = new()
+    {
+        { PaymentType.RegularMonthlyPayment, PaymentType.RegularMonthlyPayment.GetDisplayName() },
+        { PaymentType.AdmissionFee, PaymentType.AdmissionFee.GetDisplayName() },
+        { PaymentType.Penalty, PaymentType.Penalty.GetDisplayName() },
+        { PaymentType.Donation, PaymentType.Donation.GetDisplayName() },
+        { PaymentType.Installment, PaymentType.Installment.GetDisplayName() },
+        { PaymentType.Other, PaymentType.Other.GetDisplayName() }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch member info for context
+        try
+        {
+            memberInfo = await m_Member.GetByIdAsync(MemberId);
+        }
+        catch
+        {
+            // Silently handle - member info is optional for display
+        }
+
+        if (IsEditMode)
+        {
+            // Fetch payment by ID
+            payment = await m_Payment.GetByIdAsync(Id);
+        }
+        else
+        {
+            payment.EkotaMemberId = MemberId;
+            payment.PaymentDate = DateTime.Today;
+        }
+    }
+
+    private bool IsFileImage()
+    {
+        if (string.IsNullOrEmpty(payment.FileName))
+            return false;
+
+        var extension = Path.GetExtension(payment.FileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" => true,
+            _ => false
+        };
+    }
+
+    private async Task OnFileUpload(Radzen.UploadChangeEventArgs args)
+    {
+        uploadError = false;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var file = args.Files.FirstOrDefault();
+            if (file == null)
+                return;
+
+            // Check file size (5MB limit for documents)
+            const long maxFileSize = 5 * 1024 * 1024; // 5MB
+            if (file.Size > maxFileSize)
+            {
+                uploadError = true;
+                errorMessage = "File size exceeds 5MB limit.";
+                return;
+            }
+
+            // Check file type
+            var validExtensions = new[] { ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".gif" };
+            var fileExtension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (!validExtensions.Contains(fileExtension))
+            {
+                uploadError = true;
+                errorMessage = "Invalid file type. Only PDF, DOC, DOCX, JPG, PNG, GIF are allowed.";
+                return;
+            }
+
+            // Read file into byte array
+            using (var stream = file.OpenReadStream())
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                payment.File = memoryStream.ToArray();
+                payment.FileName = file.Name;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            uploadError = true;
+            errorMessage = $"Error uploading file: {ex.Message}";
+        }
+    }
+
+    private void RemoveDocument()
+    {
+        payment.File = null;
+        payment.FileName = null;
+        uploadError = false;
+        errorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task DownloadDocument()
+    {
+        if (payment.File != null && !string.IsNullOrEmpty(payment.FileName))
+        {
+            // Create download link
+            var mimeType = GetMimeType(payment.FileName);
+            var base64 = Convert.ToBase64String(payment.File);
+            var js = $"var link = document.createElement('a'); link.download = '{payment.FileName}'; link.href = 'data:{mimeType};base64,{base64}'; document.body.appendChild(link); link.click(); document.body.removeChild(link);";
+            await JSRuntime.InvokeVoidAsync("eval", js);
+        }
+    }
+
+    private string GetMimeType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".pdf" => "image/pdf",
+            ".docx" => "image/docx",
+            ".doc" => "image/doc",
+            ".xlsx" => "image/xlsx",
+            ".txt" => "image/txt",
+            ".pptx" => "image/pptx",
+            ".ppt" => "image/ppt",
+            ".rtf" => "image/rtf",
+            _ => "application/octet-stream"
+        };
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            if (IsEditMode)
+            {
+                await m_Payment.UpdateAsync(payment);
+                await DialogService.Alert("Payment updated successfully!", "Success");
+            }
+            else
+            {
+                await m_Payment.AddAsync(payment);
+                await DialogService.Alert("Payment recorded successfully!", "Success");
+            }
+
+            Navigation.NavigateTo($"/membership-payments/{MemberId}");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error: {ex.Message}", "Error");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeletePayment()
+    {
+        var confirmed = await DialogService.Confirm(
+            "Are you sure you want to delete this payment record?",
+            "Delete Payment",
+            new ConfirmOptions() { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+
+        if (confirmed == true)
+        {
+            try
+            {
+                //await m_Payment.DeleteAsync(Id);
+                await DialogService.Alert("Payment deleted successfully!", "Success");
+                Navigation.NavigateTo($"/membership-payments/{MemberId}");
+            }
+            catch (Exception ex)
+            {
+                await DialogService.Alert($"Error deleting payment: {ex.Message}", "Error");
+            }
+        }
+    }
+
+    private void BackToMembers()
+    {
+        Navigation.NavigateTo("/members");
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo($"/membership-payments/{MemberId}");
+    }
+}
+
+@inject IJSRuntime JSRuntime

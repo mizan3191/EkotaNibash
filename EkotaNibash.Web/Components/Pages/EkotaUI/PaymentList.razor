@@ -1,0 +1,339 @@
+﻿@page "/membership-payments/{MemberId:int}"
+@inject NavigationManager Navigation
+@inject IPayment m_Payment
+@inject IEkotaMember m_Member
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject DialogService DialogService
+
+<PageTitle>Membership Payments</PageTitle>
+
+<div class="container-fluid">
+    <!-- Option 4: Dashboard Style Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-primary">
+                                    <i class="fas fa-money-check-alt text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                <h1 class="display-6 fw-bold mb-2">Payment Management</h1>
+                                <div class="header-meta">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @if (memberInfo != null)
+                                        {
+                                            <div class="meta-item">
+                                                <i class="fas fa-user-tag text-primary me-1"></i>
+                                                <span class="fw-medium">@memberInfo.Name</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="fas fa-hashtag text-info me-1"></i>
+                                                <span class="fw-medium">ID: @memberInfo.MembershipNo</span>
+                                            </div>
+
+                                            <div class="meta-item">
+                                                <i class="fas fa-calendar-alt text-success me-1"></i>
+                                                <span>@memberInfo.DateOfBirth.ToString("dddd, MMMM dd, yyyy")</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="header-actions mt-3 mt-lg-0">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <RadzenButton Text="Create Payment"
+                                              Icon="add_circle_outline"
+                                              Click="AddNewPayment"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Large"
+                                              Class="shadow-sm" />
+                                <RadzenButton Text="Back to Members"
+                                              Icon="people"
+                                              Click="BackToMembers"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Large" />
+                            </div>
+                            @if (payments != null)
+                            {
+                                <div class="mt-3 text-end">
+                                    <div class="text-muted small">Total Payments</div>
+                                    <div class="h4 fw-bold text-success">৳@payments.Sum(o => o.Amount).ToString("N2")</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="header-description">
+                            <p class="lead mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Manage all financial transactions and payment records in one place.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .icon-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+
+        .header-meta .meta-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .header-content h1 {
+            color: #2d3748;
+        }
+
+        .header-description {
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            color: #4a5568;
+        }
+    </style>
+
+    <!-- Add Filter Controls Here -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <!-- Search Box -->
+                            <div class="d-flex align-items-center border rounded me-3" style="width: fit-content;">
+                                <!-- Search Icon -->
+                                <span class="ps-2" style="font-size: 1.2rem; color: #6c757d;">
+                                    <i class="fas fa-search"></i>
+                                </span>
+
+                                <!-- Search Text Box -->
+                                <RadzenTextBox @bind-Value="@search" TValue="string"
+                                               Placeholder="Search payment type, reference..."
+                                               @oninput="OnSearch"
+                                               Style="border: none; box-shadow: none; padding-left: 0.5rem;" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <RadzenDatePicker @bind-Value="fromDate"
+                                                          DateFormat="yyyy-MM-dd"
+                                                          Placeholder="From Date"
+                                                          Style="width: 100%;"
+                                                          Class="w-100" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <RadzenDatePicker @bind-Value="toDate"
+                                                          DateFormat="yyyy-MM-dd"
+                                                          Placeholder="To Date"
+                                                          Style="width: 100%;"
+                                                          Class="w-100" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- End of Header Section -->
+    <!-- Original DataGrid Section - Unchanged -->
+    <RadzenDataGrid Data="@FilteredPayments" TItem="MembershipPayment" PageSize="10"
+                    AllowPaging="true" AllowSorting="true" AllowFiltering="false">
+        <Columns>
+            <RadzenDataGridColumn TItem="MembershipPayment" Property="@nameof(MembershipPayment.PaymentDate)" Title="Payment Date" Width="130px">
+                <Template Context="payment">
+                    @payment.PaymentDate.ToString("dd-MMM-yyyy")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MembershipPayment" Property="@nameof(MembershipPayment.Amount)" Title="Amount" Width="120px" TextAlign="TextAlign.Right">
+                <Template Context="payment">
+                    <div>৳@payment.Amount.ToString("N2")</div>
+                </Template>
+                <FooterTemplate>
+                    <div class="text-end fw-bold">৳@FilteredPayments.Sum(o => o.Amount).ToString("N2")</div>
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MembershipPayment" Property="@nameof(MembershipPayment.PaymentType)" Title="Payment Type" Width="130px" />
+            <RadzenDataGridColumn TItem="MembershipPayment" Title="Actions" Width="100px">
+                <Template Context="payment">
+                    <div class="btn-group btn-group-sm">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium"
+                                      Click="() => EditPayment(payment.Id)" style="margin-right: 5px;" title="Edit" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Medium"
+                                      Click="() => ConfirmDelete(payment.Id)" title="Delete" />
+                    </div>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    [Parameter] public int MemberId { get; set; }
+
+    private List<MembershipPayment> payments = new();
+    private List<MembershipPayment> FilteredPayments = new();
+    private EkotaMember? memberInfo;
+
+    // Filter variables
+    private string search = string.Empty;
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPayments();
+        // Load member info for the header
+        try
+        {
+            memberInfo = await m_Member.GetByIdAsync(MemberId);
+        }
+        catch
+        {
+            // Silently handle - member info is optional for display
+        }
+    }
+
+    private async Task LoadPayments()
+    {
+        // Fetch payments by member ID
+        payments = await m_Payment.GetAllAsync(MemberId);
+        FilteredPayments = payments;
+    }
+
+    // Filter properties
+    public DateTime? fromDate
+    {
+        get => _fromDate;
+        set
+        {
+            if (_fromDate != value)
+            {
+                _fromDate = value;
+                FilterData();
+            }
+        }
+    }
+
+    public DateTime? toDate
+    {
+        get => _toDate;
+        set
+        {
+            if (_toDate != value)
+            {
+                _toDate = value;
+                FilterData();
+            }
+        }
+    }
+
+    // Search handler
+    private void OnSearch(ChangeEventArgs e)
+    {
+        search = e.Value?.ToString() ?? string.Empty;
+        FilterData();
+    }
+
+    // Filter method
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(search) && !fromDate.HasValue && !toDate.HasValue)
+        {
+            FilteredPayments = payments;
+        }
+        else
+        {
+            var query = payments.AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(p =>
+                    (!string.IsNullOrEmpty(p.Amount.ToString()) && p.Amount.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(p.PaymentDate.ToString()) && p.PaymentDate.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(p.PaymentType.GetDisplayName()) && p.PaymentType.GetDisplayName().Contains(search, StringComparison.OrdinalIgnoreCase))
+                );
+            }
+
+            // Apply date range filter for PaymentDate
+            if (fromDate.HasValue || toDate.HasValue)
+            {
+                var filterFrom = fromDate?.Date ?? DateTime.MinValue;
+                var filterTo = toDate?.Date.AddDays(1) ?? DateTime.MaxValue;
+
+                query = query.Where(p =>
+                    p.PaymentDate.Date >= filterFrom &&
+                    p.PaymentDate.Date < filterTo
+                );
+            }
+
+            FilteredPayments = query.ToList();
+        }
+        StateHasChanged();
+    }
+
+    private void AddNewPayment()
+    {
+        Navigation.NavigateTo($"/membership-payments/add/{MemberId}");
+    }
+
+    private void EditPayment(int id)
+    {
+        Navigation.NavigateTo($"/membership-payments/edit/{id}");
+    }
+
+    private void BackToMembers()
+    {
+        Navigation.NavigateTo("/members");
+    }
+
+    private async Task ConfirmDelete(int id)
+    {
+        // Your existing delete logic here
+    }
+}

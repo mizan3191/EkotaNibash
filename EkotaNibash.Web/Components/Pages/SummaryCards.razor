@@ -1,0 +1,175 @@
+﻿@inject IDashboard DashboardManager
+
+<div class="row mb-4">
+    @if (isLoading)
+    {
+        <!-- Loading Skeleton -->
+        @foreach (var _ in Enumerable.Range(0, 4))
+        {
+            <div class="col-md-3 mb-3">
+                <div class="card skeleton-card">
+                    <div class="card-body">
+                        <div class="placeholder-glow">
+                            <span class="placeholder col-6"></span>
+                            <h3 class="placeholder-glow mt-2">
+                                <span class="placeholder col-8"></span>
+                            </h3>
+                            <small class="placeholder-glow">
+                                <span class="placeholder col-10"></span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else if (Summary != null)
+    {
+        <div class="col-md-3 mb-3">
+            <div class="card summary-card border-start border-primary border-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Total Members</h6>
+                            <h3 class="card-title">@Summary.TotalMembers</h3>
+                            <div class="small text-muted">
+                                <span class="text-success">@Summary.ActiveMembers Active</span> •
+                                <span class="text-secondary">@Summary.InactiveMembers Inactive</span>
+                            </div>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card summary-card border-start border-success border-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Total Payments</h6>
+                            <h3 class="card-title">@FormatCurrency(Summary.TotalPayments)</h3>
+                            <div class="small text-muted">
+                                This Month: <span class="text-success">@FormatCurrency(Summary.ThisMonthPayment)</span>
+                            </div>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                            <i class="fas fa-money-bill-wave fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card summary-card border-start border-warning border-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Total Expenses</h6>
+                            <h3 class="card-title">@FormatCurrency(Summary.TotalExpenses)</h3>
+                            <div class="small text-muted">
+                                This Month: <span class="text-warning">@FormatCurrency(Summary.ThisMonthExpense)</span>
+                            </div>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                            <i class="fas fa-receipt fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card summary-card border-start @GetBalanceColor(Summary.Balance) border-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Current Balance</h6>
+                            <h3 class="card-title">@FormatCurrency(Summary.Balance)</h3>
+                            <div class="small text-muted">
+                                @GetBalanceStatus(Summary.Balance)
+                            </div>
+                        </div>
+                        <div class="@GetBalanceBgColor(Summary.Balance) p-3 rounded-circle">
+                            <i class="fas fa-balance-scale fa-2x @GetBalanceTextColor(Summary.Balance)"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Failed to load summary data.
+                <button class="btn btn-sm btn-outline-danger ms-2" @onclick="LoadSummary">Retry</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private DashboardSummary Summary { get; set; }
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSummary();
+    }
+
+    private async Task LoadSummary()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            Summary = await DashboardManager.GetDashboardSummaryAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading summary: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C");
+    }
+
+    private string GetBalanceColor(decimal balance)
+    {
+        return balance >= 0 ? "border-info" : "border-danger";
+    }
+
+    private string GetBalanceBgColor(decimal balance)
+    {
+        return balance >= 0 ? "bg-info bg-opacity-10" : "bg-danger bg-opacity-10";
+    }
+
+    private string GetBalanceTextColor(decimal balance)
+    {
+        return balance >= 0 ? "text-info" : "text-danger";
+    }
+
+    private string GetBalanceStatus(decimal balance)
+    {
+        return balance >= 0 ? "Positive Balance" : "Negative Balance";
+    }
+
+    public async Task RefreshSummary()
+    {
+        await LoadSummary();
+    }
+}

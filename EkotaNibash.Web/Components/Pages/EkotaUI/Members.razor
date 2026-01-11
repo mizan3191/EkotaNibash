@@ -1,0 +1,354 @@
+﻿@page "/members"
+@inject IEkotaMember m_Member
+@inject NavigationManager Navigation
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject DialogService DialogService
+
+<Message @ref="notificationComponent" />
+
+<PageTitle>Ekota Members</PageTitle>
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-primary">
+                                    <i class="fas fa-user-friends text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                <h1 class="display-6 fw-bold mb-2">Members</h1>
+                                @if (ekotaMembers != null && ekotaMembers.Any())
+                                {
+                                    <div class="header-meta d-flex align-items-center gap-3">
+                                        <div class="meta-item">
+                                            <i class="fas fa-users text-primary me-2"></i>
+                                            <span>Total Members: <strong>@ekotaMembers.Count</strong></span>
+                                        </div>
+                                        <div class="meta-item">
+                                            <i class="fas fa-calendar-plus text-success me-2"></i>
+                                            <span>This Month: <strong>@GetThisMonthMembersCount()</strong></span>
+                                        </div>
+                                        <div class="meta-item">
+                                            <i class="fas fa-calendar-alt text-info me-2"></i>
+                                            <span>Active: <strong>@ekotaMembers.Count</strong></span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="header-actions mt-3 mt-lg-0">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <RadzenButton Text="Add New Member"
+                                              Icon="add_circle_outline"
+                                              Click="AddNewMember"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Large"
+                                              Class="shadow-sm" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (ekotaMembers != null)
+                {
+                    <div class="header-description mt-4">
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle text-info me-2"></i>
+                            Manage all organization members. Search by name, mobile, membership number or filter by application date.
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <!-- Search Box -->
+                            <div class="d-flex align-items-center border rounded me-3" style="width: 100%; max-width: 400px;">
+                                <!-- Search Icon -->
+                                <span class="ps-2" style="font-size: 1.2rem; color: #6c757d;">
+                                    <i class="fas fa-search"></i>
+                                </span>
+
+                                <!-- Search Text Box -->
+                                <RadzenTextBox @bind-Value="@search" TValue="string"
+                                               Placeholder="Search by name, mobile, membership no..."
+                                               @oninput="OnSearch"
+                                               Style="border: none; box-shadow: none; padding-left: 0.5rem; width: 100%;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members DataGrid -->
+    <div class="row">
+        <div class="col-12">
+            @if (ekotaMembers == null || !ekotaMembers.Any())
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-body text-center py-5">
+                        <div class="empty-state">
+                            <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No Members Found</h4>
+                            <p class="text-muted">No member records available.</p>
+                            <RadzenButton Text="Add Your First Member"
+                                          Icon="add_circle_outline"
+                                          Click="AddNewMember"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Size="ButtonSize.Medium"
+                                          Class="mt-3" />
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <RadzenDataGrid @ref="membersGrid" Data="@FilteredMembers" TItem="EkotaMember" PageSize="10"
+                                AllowPaging="true" AllowSorting="true" AllowFiltering="false"
+                                Class="shadow-sm border-0">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.MembershipNo)" Title="Membership No" Width="120px" />
+                        <RadzenDataGridColumn TItem="EkotaMember" Title="Photo" Width="80px">
+                            <Template Context="member">
+                                @if (!string.IsNullOrEmpty(member.PhotoBase64))
+                                {
+                                    <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden;">
+                                        <img src="@member.PhotoBase64"
+                                             style="width: 100%; height: 100%; object-fit: cover;"
+                                             alt="Member Photo" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="width: 50px; height: 50px; border-radius: 50%; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.Name)" Title="Name" Width="180px" />
+                        <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.MobileNumber)" Title="Mobile" Width="130px" />
+                        <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.ApplicationDate)" Title="Application Date" Width="130px">
+                            <Template Context="member">
+                                @member.ApplicationDate.ToString("dd-MMM-yyyy")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.DateOfBirth)" Title="Date of Birth" Width="120px">
+                            <Template Context="member">
+                                @member.DateOfBirth.ToString("dd-MMM-yyyy")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.Occupation)" Title="Occupation" Width="120px" />
+                        <RadzenDataGridColumn TItem="EkotaMember" Title="Actions" Width="180px">
+                            <Template Context="member">
+                                <div class="btn-group btn-group-sm">
+                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium"
+                                                  Click="() => EditMember(member.Id)" style="margin-right: 5px;" title="Edit" />
+                                    <RadzenButton Icon="payment" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                                  Click="() => ViewPayments(member.Id)" style="margin-right: 5px;" title="Payments" />
+                                    <RadzenButton Icon="article" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Medium"
+                                                  Click="() => ViewDocuments(member.Id)" style="margin-right: 5px;" title="Documents" />
+                                    <RadzenButton Icon="accessibility" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                                  Click="() => ViewNominees(member.Id)" style="margin-right: 5px;" title="Nominees" />
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Medium"
+                                                  Click="() => ConfirmDelete(member.Id)" title="Delete" />
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .icon-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    }
+
+    .header-meta .meta-item {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .header-content h1 {
+        color: #2d3748;
+    }
+
+    .header-description {
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        color: #4a5568;
+    }
+
+    .empty-state {
+        padding: 3rem 0;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+</style>
+
+@code {
+    private List<EkotaMember> ekotaMembers = new();
+    private List<EkotaMember> FilteredMembers = new();
+    private RadzenDataGrid<EkotaMember> membersGrid;
+
+    // Filter variables
+    private string search = string.Empty;
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+
+    private Message notificationComponent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMembers();
+    }
+
+    private async Task LoadMembers()
+    {
+        // In real application, you would fetch from API
+        ekotaMembers = await m_Member.GetAllAsync();
+        FilteredMembers = ekotaMembers;
+    }
+
+    // Search handler
+    private void OnSearch(ChangeEventArgs e)
+    {
+        search = e.Value?.ToString() ?? string.Empty;
+        FilterData();
+    }
+
+    // Filter method
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            FilteredMembers = ekotaMembers;
+        }
+        else
+        {
+            var query = ekotaMembers.AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(m =>
+                    (!string.IsNullOrEmpty(m.Name) && m.Name.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(m.MobileNumber) && m.MobileNumber.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(m.MembershipNo) && m.MembershipNo.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(m.Occupation) && m.Occupation.Contains(search, StringComparison.OrdinalIgnoreCase))
+                );
+            }
+           
+            FilteredMembers = query.ToList();
+        }
+        StateHasChanged();
+    }
+
+    // Helper method for header stats
+    private int GetThisMonthMembersCount()
+    {
+        var currentDate = DateTime.Now;
+        return ekotaMembers.Count(m =>
+            m.ApplicationDate.Month == currentDate.Month &&
+            m.ApplicationDate.Year == currentDate.Year
+        );
+    }
+
+    private void AddNewMember()
+    {
+        Navigation.NavigateTo("/members/add");
+    }
+
+    private void EditMember(int id)
+    {
+        Navigation.NavigateTo($"/members/edit/{id}");
+    }
+
+    private void ViewNominees(int memberId)
+    {
+        Navigation.NavigateTo($"/nominees/{memberId}");
+    }
+
+    private void ViewPayments(int memberId)
+    {
+        Navigation.NavigateTo($"/membership-payments/{memberId}");
+    }
+
+    private void ViewDocuments(int memberId)
+    {
+        Navigation.NavigateTo($"/member-documents/{memberId}");
+    }
+
+    private async Task ConfirmDelete(int id)
+    {
+        var options = new ConfirmOptions()
+        {
+            OkButtonText = "Yes, Delete",
+            CancelButtonText = "No, Keep",
+            ShowClose = true,
+        };
+
+        bool? confirmed = await DialogService.Confirm("Are you absolutely sure you want to delete this item?", "Delete Confirmation", options);
+
+        if (confirmed == true)
+        {
+            await Delete(id);
+        }
+    }
+
+
+    async Task Delete(int id)
+    {
+        m_Member.DeleteMember(id);
+        notificationComponent.Show("Delete Summary", "Expense has been Deleted successfully", NotificationSeverity.Error);
+
+        await LoadMembers();
+        StateHasChanged(); // If you are managing the data source manually
+    }
+
+}

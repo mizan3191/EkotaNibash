@@ -1,0 +1,509 @@
+﻿@page "/nominees/add/{MemberId:int}"
+@page "/nominees/edit/{Id:int}"
+@inject NavigationManager Navigation
+@inject INominee m_Nominee
+@inject IEkotaMember m_Member
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject DialogService DialogService
+
+<PageTitle>@(IsEditMode ? "Edit Nominee" : "Add Nominee")</PageTitle>
+
+<div class="container-fluid">
+    <!-- Dashboard Style Header for Nominee Add/Edit Page -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-@(IsEditMode ? "warning" : "info")">
+                                    <i class="fas @(IsEditMode ? "fa-edit" : "fa-user-tag") text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                <h1 class="display-6 fw-bold mb-2">
+                                    @(IsEditMode ? "Edit Nominee" : "Add New Nominee")
+                                </h1>
+                                <div class="header-meta">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @if (memberInfo != null)
+                                        {
+                                            <div class="meta-item">
+                                                <i class="fas fa-user-tag text-info me-1"></i>
+                                                <span class="fw-medium">@memberInfo.Name</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="fas fa-hashtag text-info me-1"></i>
+                                                <span class="fw-medium">ID: @memberInfo.MembershipNo</span>
+                                            </div>
+                                        }
+                                        <div class="meta-item">
+                                            <i class="fas fa-calendar-alt text-success me-1"></i>
+                                            <span>@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</span>
+                                        </div>
+                                        @if (IsEditMode && nominee != null && nominee.DateOfBirth != default)
+                                        {
+                                            <div class="meta-item">
+                                                <i class="fas fa-birthday-cake text-warning me-1"></i>
+                                                <span>DOB: @nominee.DateOfBirth.ToString("dd MMM yyyy")</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="header-actions mt-3 mt-lg-0">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <RadzenButton Text="Back to Nominees"
+                                              Icon="list"
+                                              Click="@(() => Navigation.NavigateTo($"/nominees/{MemberId}"))"
+                                              ButtonStyle="ButtonStyle.Secondary"
+                                              Size="ButtonSize.Large" />
+                                <RadzenButton Text="Back to Members"
+                                              Icon="people"
+                                              Click="BackToMembers"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Large" />
+                            </div>
+                            @if (IsEditMode && nominee != null && !string.IsNullOrEmpty(nominee.Name))
+                            {
+                                <div class="mt-3 text-end">
+                                    <div class="text-muted small">Nominee Name</div>
+                                    <div class="h4 fw-bold text-info">@nominee.Name</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="header-description">
+                            <p class="lead mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                @(IsEditMode ?
+                                                                "Update the nominee details and photo below." :
+                                                                "Fill in the nominee information to add a new beneficiary.")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .icon-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(135deg, #17ead9 0%, #6078ea 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .header-meta .meta-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .header-content h1 {
+            color: #2d3748;
+        }
+
+        .header-description {
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            color: #4a5568;
+        }
+
+            .header-description .lead {
+                font-size: 1.1rem;
+            }
+    </style>
+
+    <EditForm Model="nominee" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-@(IsEditMode ? "warning" : "info") text-white">
+                <h5 class="mb-0">
+                    <i class="fas @(IsEditMode ? "fa-edit" : "fa-user-tag") me-2"></i>
+                    @(IsEditMode ? "Edit Nominee Information" : "Nominee Information")
+                </h5>
+            </div>
+            <div class="card-body">
+                <ValidationSummary class="alert alert-danger" />
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "info") border-bottom pb-2">
+                        <i class="fas fa-id-card me-2"></i>Basic Information
+                    </h6>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Name (English) *" />
+                            <RadzenTextBox @bind-Value="nominee.Name" Placeholder="Enter nominee full name"
+                                           Class="w-100" />
+                            <ValidationMessage For="@(() => nominee.Name)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="NID Number *" />
+                            <RadzenTextBox @bind-Value="nominee.NIDNumber"
+                                           Placeholder="Enter NID number" Class="w-100" />
+                            <ValidationMessage For="@(() => nominee.NIDNumber)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Date of Birth *" />
+                            <RadzenDatePicker @bind-Value="nominee.DateOfBirth"
+                                              DateFormat="dd/MM/yyyy" Class="w-100" />
+                            <ValidationMessage For="@(() => nominee.DateOfBirth)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "info") border-bottom pb-2">
+                        <i class="fas fa-address-card me-2"></i>Contact Information
+                    </h6>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Mobile Number *" />
+                            <RadzenTextBox @bind-Value="nominee.MobileNumber"
+                                           Placeholder="01XXXXXXXXX" Class="w-100" />
+                            <ValidationMessage For="@(() => nominee.MobileNumber)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Relationship with Member *" />
+                            <RadzenDropDown Data="@relationshipTypes" @bind-Value="nominee.RelationshipWithMember"
+                                            TextProperty="Value" ValueProperty="Key"
+                                            Placeholder="Select relationship" Class="w-100" />
+                            <ValidationMessage For="@(() => nominee.RelationshipWithMember)"
+                                               class="text-danger small" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <RadzenLabel Text="Blood Group" />
+                            <RadzenDropDown Data="@bloodGroups" @bind-Value="nominee.BloodGroup"
+                                            TextProperty="Value" ValueProperty="Key"
+                                            Placeholder="Select blood group" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <h6 class="text-@(IsEditMode ? "warning" : "info") border-bottom pb-2">
+                        <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                    </h6>
+
+                    <div class="col-12">
+                        <div class="form-group">
+                            <RadzenLabel Text="Address" />
+                            <RadzenTextArea @bind-Value="nominee.Address"
+                                            Placeholder="Enter nominee's full address"
+                                            Rows="3" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+
+
+                @if (nominee.Id <= 0)
+                {
+                    <div class="row g-3 mb-4">
+                        <h6 class="text-@(IsEditMode ? "warning" : "info") border-bottom pb-2">
+                            <i class="fas fa-camera me-2"></i>Nominee Photo
+                        </h6>
+
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <RadzenLabel Text="Upload Photo (Optional)" />
+
+                                @if (nominee.File != null && nominee.File.Length > 0)
+                                {
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <img src="@GetImageSrc()"
+                                                     alt="Nominee Photo"
+                                                     class="img-thumbnail"
+                                                     style="width: 100px; height: 100px; object-fit: cover;" />
+                                            </div>
+                                            <div>
+                                                <p class="mb-1">
+                                                    <strong>Current Photo:</strong> @nominee.FileName
+                                                </p>
+                                                <p class="mb-1 text-muted small">
+                                                    Size: @((nominee.File.Length / 1024.0).ToString("0.00")) KB
+                                                </p>
+                                                <RadzenButton Text="Remove Photo"
+                                                              Icon="delete"
+                                                              Click="@RemovePhoto"
+                                                              ButtonStyle="ButtonStyle.Danger"
+                                                              Size="ButtonSize.Medium" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                <RadzenUpload ChooseLabel="@(nominee.File != null ? "Change Photo" : "Choose Photo")"
+                                              Accept="image/*"
+                                              Multiple="false"
+                                              Class="w-100"
+                                              Change="@OnFileUpload" />
+                                <small class="text-muted d-block mt-1">
+                                    Supported formats: JPG, PNG, GIF. Max size: 2MB
+                                </small>
+                                @if (uploadError)
+                                {
+                                    <div class="alert alert-danger mt-2 small" role="alert">
+                                        @errorMessage
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="col-md-12">
+                    <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Type="submit" Class="m-2" />
+                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="Cancel" Class="m-2" />
+                </div>
+
+
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public int MemberId { get; set; }
+
+    private Nominee nominee = new();
+    private EkotaMember? memberInfo;
+    private bool IsEditMode => Id > 0;
+    private bool isSubmitting = false;
+    private bool uploadError = false;
+    private string errorMessage = string.Empty;
+    private string? imageSrc = null;
+
+    private Dictionary<string, string> bloodGroups = new()
+    {
+        { "", "Select Blood Group" },
+        { "A_Positive", "A+" },
+        { "A_Negative", "A-" },
+        { "B_Positive", "B+" },
+        { "B_Negative", "B-" },
+        { "AB_Positive", "AB+" },
+        { "AB_Negative", "AB-" },
+        { "O_Positive", "O+" },
+        { "O_Negative", "O-" }
+    };
+
+    private Dictionary<string, string> relationshipTypes = new()
+    {
+        { "", "Select Relationship" },
+        { "Spouse", "Spouse" },
+        { "Son", "Son" },
+        { "Daughter", "Daughter" },
+        { "Father", "Father" },
+        { "Mother", "Mother" },
+        { "Brother", "Brother" },
+        { "Sister", "Sister" },
+        { "Grandson", "Grandson" },
+        { "Granddaughter", "Granddaughter" },
+        { "Grandmother", "Grandmother" },
+        { "Grandfather", "Grandfather" },
+        { "Sibling", "Sibling" },
+        { "Aunt", "Aunt" },
+        { "Uncle", "Uncle" },
+        { "Cousin", "Cousin" },
+        { "Friend", "Friend" },
+        { "Relative", "Relative" },
+        { "Other", "Other" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch member info for context
+        try
+        {
+            memberInfo = await m_Member.GetByIdAsync(MemberId);
+        }
+        catch
+        {
+            // Silently handle - member info is optional for display
+        }
+
+        if (IsEditMode)
+        {
+            // Fetch nominee by ID
+            nominee = await m_Nominee.GetByIdAsync(Id);
+        }
+        else
+        {
+            // Initialize new nominee
+            nominee.EkotaMemberId = MemberId;
+            nominee.DateOfBirth = DateTime.Today.AddYears(-25);
+        }
+    }
+
+    private string GetImageSrc()
+    {
+        if (nominee.File != null && nominee.File.Length > 0)
+        {
+            // Convert byte array to base64 string for image display
+            var base64 = Convert.ToBase64String(nominee.File);
+            var mimeType = GetMimeType(nominee.FileName);
+            return $"data:{mimeType};base64,{base64}";
+        }
+        return string.Empty;
+    }
+
+    private string GetMimeType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            _ => "image/jpeg"
+        };
+    }
+
+    private async Task OnFileUpload(Radzen.UploadChangeEventArgs args)
+    {
+        uploadError = false;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var file = args.Files.FirstOrDefault();
+            if (file == null)
+                return;
+
+            // Check file size (2MB limit)
+            const long maxFileSize = 2 * 1024 * 1024; // 2MB
+            if (file.Size > maxFileSize)
+            {
+                uploadError = true;
+                errorMessage = "File size exceeds 2MB limit.";
+                return;
+            }
+
+            // Check file type
+            var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var fileExtension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (!validExtensions.Contains(fileExtension))
+            {
+                uploadError = true;
+                errorMessage = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
+                return;
+            }
+
+            // Read file into byte array
+            using (var stream = file.OpenReadStream())
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                nominee.File = memoryStream.ToArray();
+                nominee.FileName = file.Name;
+
+                // Clear any existing image source
+                imageSrc = null;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            uploadError = true;
+            errorMessage = $"Error uploading file: {ex.Message}";
+        }
+    }
+
+    private void RemovePhoto()
+    {
+        nominee.File = null;
+        nominee.FileName = null;
+        imageSrc = null;
+        uploadError = false;
+        errorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            if (IsEditMode)
+            {
+                await m_Nominee.UpdateAsync(nominee);
+                await DialogService.Alert("Nominee updated successfully!", "Success");
+            }
+            else
+            {
+                await m_Nominee.AddAsync(nominee);
+                await DialogService.Alert("Nominee added successfully!", "Success");
+            }
+
+            Navigation.NavigateTo($"/nominees/{MemberId}");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error: {ex.Message}", "Error");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void BackToMembers()
+    {
+        Navigation.NavigateTo("/members");
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo($"/nominees/{MemberId}");
+    }
+}

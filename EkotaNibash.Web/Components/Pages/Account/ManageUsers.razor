@@ -1,0 +1,390 @@
+﻿@page "/ManageUser"
+@using Microsoft.AspNetCore.Authorization
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize(Roles = "Administrator")]
+
+<Message @ref="notificationComponent" />
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-primary">
+                                    <i class="fas fa-users-cog text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                <h1 class="display-6 fw-bold mb-2">User Management</h1>
+                                @if (Users != null && Users.Any())
+                                {
+                                    <div class="header-meta d-flex align-items-center gap-3">
+                                        <div class="meta-item">
+                                            <i class="fas fa-users text-primary me-2"></i>
+                                            <span>Total Users: <strong>@Users.Count()</strong></span>
+                                        </div>
+                                        <div class="meta-item">
+                                            <i class="fas fa-user-check text-success me-2"></i>
+                                            <span>Active: <strong>@GetActiveUsersCount()</strong></span>
+                                        </div>
+                                        <div class="meta-item">
+                                            <i class="fas fa-user-shield text-warning me-2"></i>
+                                            <span>Administrators: <strong>@GetAdminUsersCount()</strong></span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="header-actions mt-3 mt-lg-0">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <RadzenButton Text="Add New User"
+                                              Icon="add_circle_outline"
+                                              Click="Create"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Large"
+                                              Class="shadow-sm" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                @if (Users != null)
+                {
+                    <div class="header-description mt-4">
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle text-info me-2"></i>
+                            Manage system users, assign roles, and control access permissions. Only administrators can access this page.
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .icon-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+
+        .header-meta .meta-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .header-content h1 {
+            color: #2d3748;
+        }
+
+        .header-description {
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            color: #4a5568;
+        }
+    </style>
+
+    <!-- User DataGrid -->
+    <div class="row">
+        <div class="col-12">
+            @if (Users == null)
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-body text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 mb-0 text-muted">Loading users data...</p>
+                    </div>
+                </div>
+            }
+            else if (!Users.Any())
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-body text-center py-5">
+                        <div class="empty-state">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No Users Found</h4>
+                            <p class="text-muted">No user accounts have been created yet.</p>
+                            <RadzenButton Text="Add First User"
+                                          Icon="add_circle_outline"
+                                          Click="Create"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Size="ButtonSize.Medium"
+                                          Class="mt-3" />
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <RadzenDataGrid Data="@Users" TItem="AppUsersDTO" PageSize="10" 
+                                        AllowPaging="true" AllowSorting="true" AllowFiltering="false"
+                                        Class="border-0">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="AppUsersDTO" Property="@nameof(AppUsersDTO.Name)" Title="Name" Width="250px">
+                                    <Template Context="user">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-2">
+                                                <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); display: flex; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-user text-white"></i>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div>@user.Name</div>
+                                                @if (user.IsDisable)
+                                                {
+                                                    <small class="text-danger">
+                                                        <i class="fas fa-ban me-1"></i>Disabled
+                                                    </small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="AppUsersDTO" Property="@nameof(AppUsersDTO.UserName)" Title="User Name" Width="200px" />
+                                <RadzenDataGridColumn TItem="AppUsersDTO" Property="@nameof(AppUsersDTO.Role)" Title="Role" Width="150px">
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="AppUsersDTO" Property="@nameof(AppUsersDTO.Email)" Title="Email" Width="250px">
+                                    <Template Context="user">
+                                        @if (!string.IsNullOrEmpty(user.Email))
+                                        {
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-envelope text-muted me-2"></i>
+                                                <span>@user.Email</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">No email</span>
+                                        }
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="AppUsersDTO" Title="Actions" Width="120px" TextAlign="TextAlign.Center">
+                                    <Template Context="user">
+                                        <div class="btn-group btn-group-sm">
+                                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium"
+                                                          Click="() => Edit(user.Id)" title="Edit" />
+                                        </div>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Popup (Keep your existing modal code) -->
+@if (Popup)
+{
+    <div class="modal" role="dialog" style="display:block" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(User.Id == 0 ? "Add New User" : "Edit User")</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="HidePopup"></button>
+                </div>
+
+                <EditForm Model="@User" OnSubmit="Save">
+                    <div class="modal-body">
+                        <div class="row m-3 ">
+                            <div class="col-md-4 mb-3">
+                                <label>Name</label>
+                                <InputText @bind-Value="User.Name" class="form-control"></InputText>
+                            </div>
+
+                            @if (User.Id == 0)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <label>Login Id</label>
+                                    <InputText @bind-Value="User.UserName" class="form-control"></InputText>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <label>Login Id</label>
+                                    <InputText @bind-Value="User.UserName" disabled class="form-control"></InputText>
+                                </div>
+                            }
+
+                            @if (User.Id == 0)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <label>Password</label>
+                                    <InputText @bind-Value="User.Password" class="form-control"></InputText>
+                                </div>
+                            }
+
+                            <div class="col-md-4 mb-3">
+                                <label>User Roles</label>
+                                <InputSelect @bind-Value="User.UserRole" class="form-select">
+                                    @foreach (Roles status in Enum.GetValues(typeof(Roles)))
+                                    {
+                                        <option value="@status">@GetDisplayName(status)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label>Email</label>
+                                <InputText @bind-Value="User.Email" class="form-control"></InputText>
+                            </div>
+
+                            @if (User.Id > 0)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <label>Current Status</label>
+                                    <InputSelect @bind-Value="User.IsDisable" class="form-control">
+                                        <option value="true">Disable</option>
+                                        <option value="false">Active</option>
+                                    </InputSelect>
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        @if (User.Id == 0)
+                        {
+                            <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Type="submit" Class="m-2" />
+                        }
+                        else
+                        {
+                            <RadzenButton Text="Update" ButtonStyle="ButtonStyle.Primary" Type="submit" Class="m-2" />
+                        }
+
+                        <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="HidePopup" Class="m-2" />
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject]
+    private IAccount m_Account { get; set; }
+
+    bool Popup = false;
+    public User User { get; set; } = new();
+    private IEnumerable<AppUsersDTO> Users { get; set; }
+    private Message notificationComponent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        LoadData();
+    }
+
+    private void Edit(int userId)
+    {
+        User = m_Account.GetUser(userId);
+        Popup = true;
+    }
+
+    private void LoadData()
+    {
+        Users = m_Account.GetUsers();
+    }
+
+    private void Create()
+    {
+        User = new User();
+        Popup = true;
+    }
+
+    private void HidePopup()
+    {
+        Popup = false;
+    }
+
+    private void Save()
+    {
+        Popup = false;
+        if (User.Id > 0)
+        {
+            m_Account.UpdateUser(User);
+            notificationComponent.Show("Updated Summary", "User has been Updated successfully", NotificationSeverity.Warning);
+        }
+        else
+        {
+            m_Account.CreateUser(User);
+            notificationComponent.Show("Updated Summary", "User has been Added successfully", NotificationSeverity.Success);
+        }
+
+        LoadData();
+    }
+
+    private string GetDisplayName(Roles roles)
+    {
+        var fieldInfo = roles.GetType().GetField(roles.ToString());
+        var displayAttribute = fieldInfo.GetCustomAttributes(false).OfType<DisplayAttribute>().FirstOrDefault();
+        return displayAttribute?.Name ?? roles.ToString();
+    }
+
+    // Helper methods for header stats
+    private int GetActiveUsersCount()
+    {
+        return Users?.Count(u => !u.IsDisable) ?? 0;
+    }
+
+    private int GetAdminUsersCount()
+    {
+        return Users?.Count(u => u.Role.GetDisplayName() == "Administrator") ?? 0;
+    }
+}
+
+<style>
+    .empty-state {
+        padding: 3rem 0;
+    }
+
+    .user-avatar {
+        flex-shrink: 0;
+    }
+
+    .badge.bg-danger.bg-opacity-10 {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+
+    .badge.bg-warning.bg-opacity-10 {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+
+    .badge.bg-primary.bg-opacity-10 {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+</style>
