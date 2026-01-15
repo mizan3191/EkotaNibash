@@ -5,7 +5,9 @@
 @inject IEkotaMember m_Member
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+
 @inject DialogService DialogService
+<Message @ref="notificationComponent" />
 
 <PageTitle>@(IsEditMode ? "Edit Nominee" : "Add Nominee")</PageTitle>
 
@@ -242,8 +244,7 @@
                 </div>
 
 
-                @if (nominee.Id <= 0)
-                {
+                
                     <div class="row g-3 mb-4">
                         <h6 class="text-@(IsEditMode ? "warning" : "info") border-bottom pb-2">
                             <i class="fas fa-camera me-2"></i>Nominee Photo
@@ -297,7 +298,6 @@
                             </div>
                         </div>
                     </div>
-                }
 
                 <div class="col-md-12">
                     <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Type="submit" Class="m-2" />
@@ -321,6 +321,8 @@
     private bool uploadError = false;
     private string errorMessage = string.Empty;
     private string? imageSrc = null;
+
+    private Message notificationComponent;
 
     private Dictionary<string, string> bloodGroups = new()
     {
@@ -477,15 +479,15 @@
             if (IsEditMode)
             {
                 await m_Nominee.UpdateAsync(nominee);
-                await DialogService.Alert("Nominee updated successfully!", "Success");
+                notificationComponent.Show("Update Summary", "Nominee has been updated successfully", NotificationSeverity.Warning);
             }
             else
             {
                 await m_Nominee.AddAsync(nominee);
-                await DialogService.Alert("Nominee added successfully!", "Success");
+                notificationComponent.Show("Update Summary", "Nominee has been added successfully", NotificationSeverity.Success);
             }
 
-            Navigation.NavigateTo($"/nominees/{MemberId}");
+            Navigation.NavigateTo($"/nominees/{nominee.EkotaMemberId}");
         }
         catch (Exception ex)
         {

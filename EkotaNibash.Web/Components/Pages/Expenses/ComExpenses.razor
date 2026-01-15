@@ -1,9 +1,9 @@
 ﻿@page "/Expenses"
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@inject DialogService DialogService
-@inject ILookup m_Lookup
 
+@inject ILookup m_Lookup
+@inject DialogService DialogService
 <Message @ref="notificationComponent" />
 
 <div class="container-fluid">

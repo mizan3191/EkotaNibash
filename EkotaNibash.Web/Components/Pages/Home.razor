@@ -1,137 +1,693 @@
 ﻿@page "/"
-
 @attribute [Authorize]
 
+@inject ICompany m_Company
+@inject IDashboard DashboardManager
 
 <style>
-    h1 {
-        color: #333;
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --info-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        --dark-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        --card-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        --card-hover-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --border-radius: 16px;
     }
 
-    p {
-        color: #555;
-        font-size: 18px;
+    .glass-effect {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .welcome-container {
-        text-align: center; /* Centers only the text */
+    body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+    }
+
+    .dashboard-container {
+        padding: 20px;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* Welcome Header */
+    .welcome-header {
+        background: var(--dark-gradient);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        color: white;
+        box-shadow: var(--card-shadow);
+    }
+
+        .welcome-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .welcome-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .welcome-header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            line-height: 1.5;
+        }
+
+    .welcome-icon {
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2.5rem;
+        opacity: 0.3;
+    }
+
+    /* Summary Cards */
+    .summary-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        transition: var(--transition);
+        border: none;
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+        .summary-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+    .card-gradient-border {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+    }
+
+    .card-primary .card-gradient-border {
+        background: var(--primary-gradient);
+    }
+
+    .card-success .card-gradient-border {
+        background: var(--success-gradient);
+    }
+
+    .card-warning .card-gradient-border {
+        background: var(--warning-gradient);
+    }
+
+    .card-info .card-gradient-border {
+        background: var(--info-gradient);
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .card-subtitle {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .card-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #2d3436;
+        line-height: 1;
+    }
+
+    .card-details {
+        font-size: 12px;
+        color: #636e72;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .icon-container {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+        position: absolute;
+        right: 20px;
+        top: 20px;
+    }
+
+    .card-primary .icon-container {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        color: #667eea;
+    }
+
+    .card-success .icon-container {
+        background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
+        color: #4facfe;
+    }
+
+    .card-warning .icon-container {
+        background: linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 209, 64, 0.1) 100%);
+        color: #fa709a;
+    }
+
+    .card-info .icon-container {
+        background: linear-gradient(135deg, rgba(168, 237, 234, 0.1) 0%, rgba(254, 214, 227, 0.1) 100%);
+        color: #764ba2;
+    }
+
+    .summary-card:hover .icon-container {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .icon {
+        font-size: 22px;
+    }
+
+    /* Trend Indicator */
+    .trend-indicator {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        margin-top: 8px;
+        gap: 4px;
+    }
+
+    .trend-up {
+        background: linear-gradient(135deg, rgba(79, 172, 254, 0.12) 0%, rgba(0, 242, 254, 0.12) 100%);
+        color: #4facfe;
+    }
+
+    .trend-down {
+        background: linear-gradient(135deg, rgba(250, 112, 154, 0.12) 0%, rgba(254, 209, 64, 0.12) 100%);
+        color: #fa709a;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 0 10px;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+
+    .refresh-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 8px 18px;
+        color: white;
+        font-weight: 600;
+        font-size: 13px;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.25);
+    }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.35);
+        }
+
+    /* Table Cards */
+    .table-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        height: 100%;
+        transition: var(--transition);
+        margin-bottom: 20px;
+    }
+
+        .table-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+    .table-card-header {
+        padding: 18px 24px;
+        color: white;
+        margin: 0;
+        border: none;
+    }
+
+    .table-card-header-danger {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+    }
+
+    .table-card-header-success {
+        background: linear-gradient(135deg, #4cd964 0%, #5ac8fa 100%);
+    }
+
+    .table-card-body {
+        padding: 0;
+    }
+
+    .table {
+        margin: 0;
+        font-size: 13px;
+    }
+
+        .table thead th {
+            border: none;
+            padding: 14px 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.3px;
+            color: #6c757d;
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .table tbody td {
+            padding: 14px 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            font-size: 13px;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.04);
+        }
+
+    /* Badge Styling */
+    .badge {
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
+    }
+
+    .badge-danger {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #4cd964 0%, #5ac8fa 100%);
+    }
+
+    /* Avatar Circle */
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    /* Alert Styling */
+    .alert {
+        border-radius: var(--border-radius);
+        padding: 16px 20px;
+        font-size: 13px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Loading Skeleton */
+    .skeleton-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        height: 100%;
+        padding: 20px;
+    }
+
+    .skeleton-line {
+        height: 16px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+        .skeleton-line.short {
+            width: 60%;
+        }
+
+        .skeleton-line.medium {
+            width: 80%;
+        }
+
+    .skeleton-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        position: absolute;
+        right: 20px;
+        top: 20px;
+    }
+
+    @@keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 1200px) {
+        .card-title {
+            font-size: 1.6rem;
+        }
+
+        .icon-container {
+            width: 56px;
+            height: 56px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-container {
+            padding: 15px;
+        }
+
+        .welcome-header {
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .welcome-icon {
+            display: none;
+        }
+
+        .welcome-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .welcome-header p {
+            font-size: 0.9rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        .icon-container {
+            width: 50px;
+            height: 50px;
+            right: 18px;
+            top: 18px;
+        }
+
+        .icon {
+            font-size: 20px;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 12px;
+            font-size: 12px;
+        }
+
+        .dashboard-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+            .dashboard-header h1 {
+                font-size: 1.3rem;
+            }
+
+        .refresh-btn {
+            align-self: flex-end;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .col-md-6 {
+            margin-bottom: 15px;
+        }
+
+        .table-card-header {
+            padding: 16px;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 10px 8px;
+            font-size: 11px;
+        }
+
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 3px 8px;
+        }
+    }
+
+    /* Utility Classes */
+    .text-small {
+        font-size: 12px;
+    }
+
+    .text-xs {
+        font-size: 11px;
+    }
+
+    .fw-medium {
+        font-weight: 500;
     }
 </style>
 
-<div class="welcome-container">
-    <h1>Welcome to @CompanyInfo.Name!</h1>
-    <p>@CompanyInfo.CompanyMessage</p>
-</div>
-
-
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">Dashboard</h1>
-        <div>
-            <button class="btn btn-primary" @onclick="RefreshDashboard">
-                <i class="fas fa-sync-alt me-2"></i>Refresh
-            </button>
+<div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+        <div class="welcome-icon">
+            <i class="fas fa-chart-line"></i>
         </div>
+        <h1>Welcome to @CompanyInfo.Name!</h1>
+        <p class="text-small">@CompanyInfo.CompanyMessage</p>
     </div>
 
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1>Dashboard Overview</h1>
+        <button class="refresh-btn" @onclick="RefreshDashboard">
+            <i class="fas fa-sync-alt"></i> Refresh Dashboard
+        </button>
+    </div>
 
+    <!-- Summary Cards Section -->
     <div class="row mb-4">
         @if (isLoading)
         {
             <!-- Loading Skeleton -->
-            @foreach (var _ in Enumerable.Range(0, 4))
-            {
-                <div class="col-md-3 mb-3">
-                    <div class="card skeleton-card">
-                        <div class="card-body">
-                            <div class="placeholder-glow">
-                                <span class="placeholder col-6"></span>
-                                <h3 class="placeholder-glow mt-2">
-                                    <span class="placeholder col-8"></span>
-                                </h3>
-                                <small class="placeholder-glow">
-                                    <span class="placeholder col-10"></span>
-                                </small>
-                            </div>
-                        </div>
-                    </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="skeleton-card">
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-icon"></div>
                 </div>
-            }
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="skeleton-card">
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-icon"></div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="skeleton-card">
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-icon"></div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="skeleton-card">
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-icon"></div>
+                </div>
+            </div>
         }
         else if (Summary != null)
         {
-            <div class="col-md-3 mb-3">
-                <div class="card summary-card border-start border-primary border-4">
+            <!-- Total Members Card -->
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="summary-card card-primary">
+                    <div class="card-gradient-border"></div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-2 text-muted">Total Members</h6>
-                                <h3 class="card-title">@Summary.TotalMembers</h3>
-                                <div class="small text-muted">
-                                    <span class="text-success">@Summary.ActiveMembers Active</span> •
-                                    <span class="text-secondary">@Summary.InactiveMembers Inactive</span>
-                                </div>
-                            </div>
-                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
-                                <i class="fas fa-users fa-2x text-primary"></i>
-                            </div>
+                        <h6 class="card-subtitle">
+                            <i class="fas fa-user-friends"></i> Total Members
+                        </h6>
+                        <h2 class="card-title">@Summary.TotalMembers</h2>
+                        <div class="card-details">
+                            <i class="fas fa-circle text-success" style="font-size: 8px;"></i>
+                            <span class="text-success fw-medium">@Summary.ActiveMembers Active</span>
+                            <span class="mx-1">•</span>
+                            <i class="fas fa-circle text-secondary" style="font-size: 8px;"></i>
+                            <span class="text-secondary">@Summary.InactiveMembers Inactive</span>
+                        </div>
+                        @{
+                            double growthRate = Summary.TotalMembers > 0 ?
+                            ((double)Summary.ActiveMembers / Summary.TotalMembers * 100) : 0;
+                        }
+                        <div class="trend-indicator @(growthRate > 50 ? "trend-up" : "trend-down")">
+                            <i class="fas @(growthRate > 50 ? "fa-arrow-up" : "fa-arrow-down")"></i>
+                            @growthRate.ToString("F1")% Active Rate
+                        </div>
+                        <div class="icon-container">
+                            <i class="fas fa-users icon"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-3 mb-3">
-                <div class="card summary-card border-start border-success border-4">
+            <!-- Total Payments Card -->
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="summary-card card-success">
+                    <div class="card-gradient-border"></div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-2 text-muted">Total Payments</h6>
-                                <h3 class="card-title">@FormatCurrency(Summary.TotalPayments)</h3>
-                                <div class="small text-muted">
-                                    This Month: <span class="text-success">@FormatCurrency(Summary.ThisMonthPayment)</span>
-                                </div>
-                            </div>
-                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
-                                <i class="fas fa-money-bill-wave fa-2x text-success"></i>
-                            </div>
+                        <h6 class="card-subtitle">
+                            <i class="fas fa-credit-card"></i> Total Payments
+                        </h6>
+                        <h2 class="card-title">@FormatCurrency(Summary.TotalPayments)</h2>
+                        <div class="card-details">
+                            <i class="fas fa-calendar-check"></i>
+                            This Month: <span class="text-success fw-medium">@FormatCurrency(Summary.ThisMonthPayment)</span>
+                        </div>
+                        <div class="trend-indicator trend-up">
+                            <i class="fas fa-chart-line"></i>
+                            Monthly Revenue
+                        </div>
+                        <div class="icon-container">
+                            <i class="fas fa-money-bill-wave icon"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-3 mb-3">
-                <div class="card summary-card border-start border-warning border-4">
+            <!-- Total Expenses Card -->
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="summary-card card-warning">
+                    <div class="card-gradient-border"></div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-2 text-muted">Total Expenses</h6>
-                                <h3 class="card-title">@FormatCurrency(Summary.TotalExpenses)</h3>
-                                <div class="small text-muted">
-                                    This Month: <span class="text-warning">@FormatCurrency(Summary.ThisMonthExpense)</span>
-                                </div>
-                            </div>
-                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
-                                <i class="fas fa-receipt fa-2x text-warning"></i>
-                            </div>
+                        <h6 class="card-subtitle">
+                            <i class="fas fa-receipt"></i> Total Expenses
+                        </h6>
+                        <h2 class="card-title">@FormatCurrency(Summary.TotalExpenses)</h2>
+                        <div class="card-details">
+                            <i class="fas fa-calendar-alt"></i>
+                            This Month: <span class="text-warning fw-medium">@FormatCurrency(Summary.ThisMonthExpense)</span>
+                        </div>
+                        @{
+                            decimal expenseRatio = Summary.TotalPayments > 0 ?
+                            (Summary.TotalExpenses / Summary.TotalPayments * 100) : 0;
+                        }
+                        <div class="trend-indicator @(expenseRatio < 30 ? "trend-up" : "trend-down")">
+                            <i class="fas @(expenseRatio < 30 ? "fa-chart-pie" : "fa-exclamation-triangle")"></i>
+                            @expenseRatio.ToString("F1")% Expense Ratio
+                        </div>
+                        <div class="icon-container">
+                            <i class="fas fa-receipt icon"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-3 mb-3">
-                <div class="card summary-card border-start @GetBalanceColor(Summary.Balance) border-4">
+            <!-- Current Balance Card -->
+            <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                <div class="summary-card card-info">
+                    <div class="card-gradient-border"></div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-2 text-muted">Current Balance</h6>
-                                <h3 class="card-title">@FormatCurrency(Summary.Balance)</h3>
-                                <div class="small text-muted">
-                                    @GetBalanceStatus(Summary.Balance)
-                                </div>
-                            </div>
-                            <div class="@GetBalanceBgColor(Summary.Balance) p-3 rounded-circle">
-                                <i class="fas fa-balance-scale fa-2x @GetBalanceTextColor(Summary.Balance)"></i>
-                            </div>
+                        <h6 class="card-subtitle">
+                            <i class="fas fa-balance-scale"></i> Current Balance
+                        </h6>
+                        <h2 class="card-title @(Summary.Balance >= 0 ? "text-success" : "text-danger")">
+                            @FormatCurrency(Summary.Balance)
+                        </h2>
+                        <div class="card-details">
+                            <i class="fas fa-percentage"></i>
+                            Net Margin: <span class="fw-medium">@CalculateNetMargin()%</span>
+                        </div>
+                        <div class="trend-indicator @(Summary.Balance >= 0 ? "trend-up" : "trend-down")">
+                            <i class="fas @(Summary.Balance >= 0 ? "fa-thumbs-up" : "fa-thumbs-down")"></i>
+                            @GetBalanceStatus(Summary.Balance)
+                        </div>
+                        <div class="icon-container">
+                            <i class="fas fa-balance-scale icon @(Summary.Balance >= 0 ? "text-success" : "text-danger")"></i>
                         </div>
                     </div>
                 </div>
@@ -139,64 +695,108 @@
         }
         else
         {
+            <!-- Error State -->
             <div class="col-12">
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Failed to load summary data.
-                    <button class="btn btn-sm btn-outline-danger ms-2" @onclick="LoadSummary">Retry</button>
+                <div class="alert alert-danger d-flex align-items-center" style="border-radius: var(--border-radius); padding: 20px;">
+                    <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
+                    <div>
+                        <h6 class="mb-2 fw-medium">Failed to load dashboard data</h6>
+                        <p class="mb-2 text-small">There was an error loading the summary data. Please try again.</p>
+                        <button class="btn btn-sm btn-outline-danger mt-2" @onclick="LoadSummary">
+                            <i class="fas fa-redo me-2"></i> Retry Loading
+                        </button>
+                    </div>
                 </div>
             </div>
         }
     </div>
 
-
-    <div class="row mt-4">
+    <!-- Tables Section -->
+    <div class="row">
         <!-- Due Members Table -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="card-title mb-0">Due Payments List</h5>
+        <div class="col-lg-6 mb-3">
+            <div class="table-card">
+                <div class="table-card-header table-card-header-danger">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0" style="font-size: 1.1rem;">
+                            <i class="fas fa-exclamation-circle me-2"></i> Due Payments List
+                        </h5>
+                        <span class="badge bg-light text-dark" style="font-size: 11px;">@DueMembers.Count Members</span>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="table-card-body">
                     @if (DueMembers.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-hover table-sm">
+                            <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
+                                        <th>Member</th>
                                         <th>Mobile</th>
-                                        <th>Months Due</th>
+                                        <th>Due Status</th>
                                         <th>Due Amount</th>
                                         <th>Last Payment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @{
-                                        int dueCounter = 1;
-                                    }
-                                    @foreach (var member in DueMembers.OrderBy(x => x.Name))
+                                    @foreach (var member in DueMembers.OrderBy(x => x.Name).Take(8))
                                     {
                                         <tr>
-                                            <td>@member.Name</td>
-                                            <td>@member.MobileNumber</td>
                                             <td>
-                                                <span class="badge bg-danger">@member.MonthsDue months</span>
-                                                <small class="text-muted">(@member.TotalMonthsPaid/@member.TotalMonthsMembership)</small>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-2">
+                                                        @if (!string.IsNullOrEmpty(member.PhotoBase64))
+                                                        {
+                                                            <img src="@member.PhotoBase64"
+                                                                 class="rounded-circle"
+                                                                 width="40"
+                                                                 height="40"
+                                                                 style="object-fit: cover;" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="avatar-circle bg-danger">
+                                                                <span class="text-xs">@member.Name.Substring(0, 1).ToUpper()</span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium" style="font-size: 13px;">@member.Name</div>
+                                                        <div class="text-xs text-muted">ID: @member.MembershipNo</div>
+                                                    </div>
+                                                </div>
                                             </td>
-                                            <td class="text-danger fw-bold">@member.DueAmount.ToString("C")</td>
-                                            <td>@member.LastPaymentDate?.ToString("dd/MM/yyyy")</td>
+                                            <td class="text-xs">@member.MobileNumber</td>
+                                            <td>
+                                                <span class="badge badge-danger">@member.MonthsDue months due</span>
+                                                <div class="text-xs text-muted mt-1">
+                                                    Paid: @member.TotalMonthsPaid/@member.TotalMonthsMembership
+                                                </div>
+                                            </td>
+                                            <td class="text-danger fw-medium" style="font-size: 13px;">@FormatCurrency(member.DueAmount)</td>
+                                            <td>
+                                                <div class="text-xs text-muted">
+                                                    @member.LastPaymentDate?.ToString("dd MMM yyyy")
+                                                </div>
+                                            </td>
                                         </tr>
-                                        dueCounter++;
                                     }
                                 </tbody>
                             </table>
                         </div>
+                        @if (DueMembers.Count > 8)
+                        {
+                            <div class="text-center py-2 border-top">
+                                <span class="text-xs text-muted">And @(DueMembers.Count - 8) more members with due payments</span>
+                            </div>
+                        }
                     }
                     else
                     {
-                        <div class="alert alert-success">
-                            No due payments found. All members are up to date!
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                            <h6 class="text-success fw-medium">All Clear!</h6>
+                            <p class="text-xs text-muted mb-0">No due payments found. All members are up to date!</p>
                         </div>
                     }
                 </div>
@@ -204,81 +804,108 @@
         </div>
 
         <!-- Advance Payments Table -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="card-title mb-0">Advance Payments List</h5>
+        <div class="col-lg-6 mb-3">
+            <div class="table-card">
+                <div class="table-card-header table-card-header-success">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0" style="font-size: 1.1rem;">
+                            <i class="fas fa-forward me-2"></i> Advance Payments List
+                        </h5>
+                        <span class="badge bg-light text-dark" style="font-size: 11px;">@AdvanceMembers.Count Members</span>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="table-card-body">
                     @if (AdvanceMembers.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-hover table-sm">
+                            <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
+                                        <th>Member</th>
                                         <th>Mobile</th>
-                                        <th>Advance Months</th>
+                                        <th>Advance Status</th>
                                         <th>Advance Amount</th>
                                         <th>Total Paid</th>
-                                        <th>Last Payment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @{
-                                        int advanceCounter = 1;
-                                    }
-                                    @foreach (var member in AdvanceMembers.OrderBy(x => x.Name))
+                                    @foreach (var member in AdvanceMembers.OrderBy(x => x.Name).Take(8))
                                     {
                                         <tr>
-                                            <td>@member.Name</td>
-                                            <td>@member.MobileNumber</td>
                                             <td>
-                                                <span class="badge bg-success">@member.AdvanceMonths months</span>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-2">
+                                                        @if (!string.IsNullOrEmpty(member.PhotoBase64))
+                                                        {
+                                                            <img src="@member.PhotoBase64"
+                                                                 class="rounded-circle"
+                                                                 width="40"
+                                                                 height="40"
+                                                                 style="object-fit: cover;" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="avatar-circle bg-danger">
+                                                                <span class="text-xs">@member.Name.Substring(0, 1).ToUpper()</span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium" style="font-size: 13px;">@member.Name</div>
+                                                        <div class="text-xs text-muted">ID: @member.MembershipNo</div>
+                                                    </div>
+                                                </div>
                                             </td>
-                                            <td class="text-success fw-bold">@member.AdvanceAmount.ToString("C")</td>
-                                            <td>@member.TotalPaid.ToString("C")</td>
-                                            <td>@member.LastPaymentDate?.ToString("dd/MM/yyyy")</td>
+                                            <td class="text-xs">@member.MobileNumber</td>
+                                            <td>
+                                                <span class="badge badge-success">@member.AdvanceMonths months advance</span>
+                                                <div class="text-xs text-muted mt-1">
+                                                    Up to @DateTime.Now.AddMonths(member.AdvanceMonths).ToString("MMM yyyy")
+                                                </div>
+                                            </td>
+                                            <td class="text-success fw-medium" style="font-size: 13px;">@FormatCurrency(member.AdvanceAmount)</td>
+                                            <td>
+                                                <div class="fw-medium" style="font-size: 13px;">@FormatCurrency(member.TotalPaid)</div>
+                                                <div class="text-xs text-muted">
+                                                    Last: @member.LastPaymentDate?.ToString("dd MMM")
+                                                </div>
+                                            </td>
                                         </tr>
-                                        advanceCounter++;
                                     }
                                 </tbody>
                             </table>
                         </div>
+                        @if (AdvanceMembers.Count > 8)
+                        {
+                            <div class="text-center py-2 border-top">
+                                <span class="text-xs text-muted">And @(AdvanceMembers.Count - 8) more members with advance payments</span>
+                            </div>
+                        }
                     }
                     else
                     {
-                        <div class="alert alert-info">
-                            No advance payments found.
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle fa-2x text-info mb-2"></i>
+                            <h6 class="text-info fw-medium">No Advance Payments</h6>
+                            <p class="text-xs text-muted mb-0">No advance payments found. Members are paying as per schedule.</p>
                         </div>
                     }
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
 @code {
-    [Inject]
-    private ICompany m_Company { get; set; }
-
-    [Inject]
-    private IDashboard DashboardManager { get; set; }
-
     private CompanyInfo CompanyInfo { get; set; } = new();
-
     private DashboardSummary Summary { get; set; } = new();
-
     private bool isLoading = true;
-
     public List<MemberDueDto> DueMembers { get; set; } = new();
     public List<MemberAdvanceDto> AdvanceMembers { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadDashboardData();
-        
         await LoadSummary();
     }
 
@@ -292,6 +919,7 @@
     private async Task RefreshDashboard()
     {
         await LoadDashboardData();
+        await LoadSummary();
         StateHasChanged();
     }
 
@@ -302,6 +930,7 @@
 
         try
         {
+            await Task.Delay(300);
             Summary = await DashboardManager.GetDashboardSummaryAsync();
         }
         catch (Exception ex)
@@ -320,23 +949,15 @@
         return amount.ToString("C");
     }
 
-    private string GetBalanceColor(decimal balance)
-    {
-        return balance >= 0 ? "border-info" : "border-danger";
-    }
-
-    private string GetBalanceBgColor(decimal balance)
-    {
-        return balance >= 0 ? "bg-info bg-opacity-10" : "bg-danger bg-opacity-10";
-    }
-
-    private string GetBalanceTextColor(decimal balance)
-    {
-        return balance >= 0 ? "text-info" : "text-danger";
-    }
-
     private string GetBalanceStatus(decimal balance)
     {
-        return balance >= 0 ? "Positive Balance" : "Negative Balance";
+        return balance >= 0 ? "Positive Cash Flow" : "Negative Cash Flow";
+    }
+
+    private string CalculateNetMargin()
+    {
+        if (Summary?.TotalPayments == 0) return "0.0";
+        var netMargin = ((Summary?.Balance ?? 0) / (Summary?.TotalPayments ?? 1) * 100);
+        return netMargin.ToString("F1");
     }
 }

@@ -155,23 +155,41 @@
         {
             var members = await _dbContext.EkotaMembers
                 .Where(m => !m.IsInactive)
-                .Include(m => m.MembershipPayments)
+                .Select(m => new
+                {
+                    Member = m,
+
+                    Payments = m.MembershipPayments,
+
+                    // ✅ LAST uploaded photo
+                    LastDoc = _dbContext.MemberDocuments
+                        .Where(d =>
+                            d.DocumentTypeId == 8 &&
+                            d.EkotaMemberId == m.Id
+                        )
+                        .OrderByDescending(d => d.Id)
+                        .Select(d => new
+                        {
+                            d.File,
+                            d.FileName
+                        })
+                        .FirstOrDefault()
+                })
                 .ToListAsync();
 
             var result = new List<MemberDueDto>();
             var currentDate = DateTime.Now;
 
-            // Calculate total months from June 2025 to current date (inclusive)
             var totalMonthsFromStart = CalculateMonthsBetween(START_DATE, currentDate);
 
-            foreach (var member in members)
+            foreach (var item in members)
             {
-                // Every member is expected to pay from June 2025 to current date
+                var member = item.Member;
+
                 var expectedMonths = totalMonthsFromStart;
 
-                // Calculate paid amount (only PaymentType = 1)
-                var totalPaid = member.MembershipPayments?
-                    .Where(p => (int)p.PaymentType == 1) // Filter by integer value 1
+                var totalPaid = item.Payments?
+                    .Where(p => (int)p.PaymentType == 1 && !p.IsInactive)
                     .Sum(p => p.Amount) ?? 0;
 
                 var paidMonths = (int)Math.Floor(totalPaid / MONTHLY_FEE);
@@ -179,8 +197,8 @@
 
                 if (dueMonths > 0)
                 {
-                    var lastPaymentDate = member.MembershipPayments?
-                        .Where(p => (int)p.PaymentType == 1)
+                    var lastPaymentDate = item.Payments?
+                        .Where(p => (int)p.PaymentType == 1 && !p.IsInactive)
                         .OrderByDescending(p => p.PaymentDate)
                         .FirstOrDefault()?.PaymentDate;
 
@@ -195,35 +213,59 @@
                         MonthsDue = dueMonths,
                         DueAmount = dueMonths * MONTHLY_FEE,
                         TotalMonthsMembership = expectedMonths,
-                        TotalMonthsPaid = paidMonths
+                        TotalMonthsPaid = paidMonths,
+
+                        // ✅ PHOTO DATA
+                        File = item.LastDoc?.File,
+                        FileName = item.LastDoc?.FileName
                     });
                 }
             }
 
-            return result.OrderByDescending(m => m.MonthsDue).ToList();
+            return result
+                .OrderByDescending(m => m.MonthsDue)
+                .ToList();
         }
 
         public async Task<List<MemberAdvanceDto>> GetMembersWithAdvanceAsync()
         {
             var members = await _dbContext.EkotaMembers
                 .Where(m => !m.IsInactive)
-                .Include(m => m.MembershipPayments)
+                .Select(m => new
+                {
+                    Member = m,
+
+                    Payments = m.MembershipPayments,
+
+                    // ✅ LAST uploaded member photo
+                    LastDoc = _dbContext.MemberDocuments
+                        .Where(d =>
+                            d.DocumentTypeId == 8 &&
+                            d.EkotaMemberId == m.Id
+                        )
+                        .OrderByDescending(d => d.Id) // or CreatedDate
+                        .Select(d => new
+                        {
+                            d.File,
+                            d.FileName
+                        })
+                        .FirstOrDefault()
+                })
                 .ToListAsync();
 
             var result = new List<MemberAdvanceDto>();
             var currentDate = DateTime.Now;
 
-            // Calculate total months from June 2025 to current date (inclusive)
             var totalMonthsFromStart = CalculateMonthsBetween(START_DATE, currentDate);
 
-            foreach (var member in members)
+            foreach (var item in members)
             {
-                // Every member is expected to pay from June 2025 to current date
+                var member = item.Member;
+
                 var expectedMonths = totalMonthsFromStart;
 
-                // Calculate paid amount (only PaymentType = 1)
-                var totalPaid = member.MembershipPayments?
-                    .Where(p => (int)p.PaymentType == 1) // Filter by integer value 1
+                var totalPaid = item.Payments?
+                    .Where(p => (int)p.PaymentType == 1 && !p.IsInactive)
                     .Sum(p => p.Amount) ?? 0;
 
                 var expectedAmount = expectedMonths * MONTHLY_FEE;
@@ -233,8 +275,8 @@
                     var advanceAmount = totalPaid - expectedAmount;
                     var advanceMonths = (int)Math.Floor(advanceAmount / MONTHLY_FEE);
 
-                    var lastPaymentDate = member.MembershipPayments?
-                        .Where(p => (int)p.PaymentType == 1)
+                    var lastPaymentDate = item.Payments?
+                        .Where(p => (int)p.PaymentType == 1 && !p.IsInactive)
                         .OrderByDescending(p => p.PaymentDate)
                         .FirstOrDefault()?.PaymentDate;
 
@@ -247,13 +289,20 @@
                         LastPaymentDate = lastPaymentDate,
                         AdvanceMonths = advanceMonths,
                         AdvanceAmount = advanceAmount,
-                        TotalPaid = totalPaid
+                        TotalPaid = totalPaid,
+
+                        // ✅ PHOTO DATA
+                        File = item.LastDoc?.File,
+                        FileName = item.LastDoc?.FileName
                     });
                 }
             }
 
-            return result.OrderByDescending(m => m.AdvanceMonths).ToList();
+            return result
+                .OrderByDescending(m => m.AdvanceMonths)
+                .ToList();
         }
+
 
         // Helper method to calculate months between two dates (inclusive)
         private int CalculateMonthsBetween(DateTime startDate, DateTime endDate)

@@ -6,9 +6,55 @@
         {
         }
 
-        public Task<List<EkotaMember>> GetAllAsync() => _dbContext.EkotaMembers
-            .Where(m => !m.IsInactive)
-            .ToListAsync();
+        public async Task<List<EkotaMember>> GetAllAsync()
+        {
+            return await _dbContext.EkotaMembers
+                .Where(m => !m.IsInactive)
+                .Select(m => new
+                {
+                    Member = m,
+
+                    LastDoc = _dbContext.MemberDocuments
+                        .Where(d =>
+                            d.DocumentTypeId == 8 &&
+                            d.EkotaMemberId == m.Id
+                        )
+                        .OrderByDescending(d => d.Id) // or CreatedDate
+                        .Select(d => new
+                        {
+                            d.File,
+                            d.FileName
+                        })
+                        .FirstOrDefault()
+                })
+                .Select(x => new EkotaMember
+                {
+                    Id = x.Member.Id,
+                    MembershipNo = x.Member.MembershipNo,
+                    ApplicationDate = x.Member.ApplicationDate,
+                    Name = x.Member.Name,
+                    DateOfBirth = x.Member.DateOfBirth,
+                    NIDNumber = x.Member.NIDNumber,
+                    FatherName = x.Member.FatherName,
+                    MotherName = x.Member.MotherName,
+                    Occupation = x.Member.Occupation,
+                    MobileNumber = x.Member.MobileNumber,
+                    OptionalMobileNumber = x.Member.OptionalMobileNumber,
+                    Email = x.Member.Email,
+                    BloodGroup = x.Member.BloodGroup,
+                    PresentAddress = x.Member.PresentAddress,
+                    PermanentAddress = x.Member.PermanentAddress,
+                    IsDeclarationAccepted = x.Member.IsDeclarationAccepted,
+                    DeclarationDate = x.Member.DeclarationDate,
+                    IsInactive = x.Member.IsInactive,
+
+                    // ✅ ONE TIME document fetch
+                    File = x.LastDoc != null ? x.LastDoc.File : null,
+                    FileName = x.LastDoc != null ? x.LastDoc.FileName : null
+                })
+                .ToListAsync();
+        }
+
 
         public Task<EkotaMember> GetByIdAsync(int id) => _dbContext.EkotaMembers.FindAsync(id).AsTask();
 
@@ -30,6 +76,12 @@
         {
             _dbContext.EkotaMembers.Update(member);
             await _dbContext.SaveChangesAsync();
+
+            // If there's a file attached, create a MemberDocument
+            if (member.File != null && member.File.Length > 0)
+            {
+                CreateEkotaMemberDocument(member);
+            }
         }
 
         public bool DeleteMember(int memberId)
@@ -44,9 +96,9 @@
             var memberDocument = new MemberDocument
             {
                 EkotaMemberId = member.Id,
-                DocumentTypeId = 2, // Assuming 6 is "Photo" from your DocumentTypes
-                DocumentName = $"Nominee Information - {DateTime.Now:dd-MMM-yyyy}",
-                Description = $"Document of ৳{member.Name} on {DateTime.Now:dd-MMM-yyyy}",
+                DocumentTypeId = 8, // Assuming 6 is "Photo" from your DocumentTypes
+                DocumentName = "Profile Picture",
+                Description = $"Profile Picture of {member.Name} on {DateTime.Now:dd-MMM-yyyy}",
                 FileName = member.FileName,
                 FileType = Path.GetExtension(member.FileName),
                 File = member.File,

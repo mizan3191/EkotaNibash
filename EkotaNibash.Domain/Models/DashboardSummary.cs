@@ -1,4 +1,10 @@
-﻿namespace EkotaNibash.Domain.Models
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EkotaNibash.Domain.Models
 {
     public class DashboardSummary
     {
@@ -60,6 +66,15 @@
         public decimal DueAmount { get; set; }
         public int TotalMonthsMembership { get; set; }
         public int TotalMonthsPaid { get; set; }
+
+        // ✅ NEW (for photo)
+        public byte[] File { get; set; }
+        public string FileName { get; set; }
+
+        public string PhotoBase64 =>
+            File != null && File.Length > 0
+                ? $"data:image/jpeg;base64,{Convert.ToBase64String(File)}"
+                : null;
     }
 
     // DTO for Advance Payments (অগ্রিম জমার তালিকা)
@@ -73,6 +88,15 @@
         public int AdvanceMonths { get; set; }
         public decimal AdvanceAmount { get; set; }
         public decimal TotalPaid { get; set; }
+
+        // ✅ NEW (for photo)
+        public byte[] File { get; set; }
+        public string FileName { get; set; }
+
+        public string PhotoBase64 =>
+            File != null && File.Length > 0
+                ? $"data:image/jpeg;base64,{Convert.ToBase64String(File)}"
+                : null;
     }
 
     // DTO for Dashboard Summary

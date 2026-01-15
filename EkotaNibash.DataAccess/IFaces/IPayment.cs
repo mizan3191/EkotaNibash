@@ -6,5 +6,6 @@
         Task<MembershipPayment> GetByIdAsync(int id);
         Task AddAsync(MembershipPayment payment);
         Task UpdateAsync(MembershipPayment payment);
+        bool DeletePayment(int id);
     }
 }

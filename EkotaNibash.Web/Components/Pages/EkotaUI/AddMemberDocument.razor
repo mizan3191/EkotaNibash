@@ -5,6 +5,8 @@
 @inject IEkotaMember m_Member
 @inject ILookup m_Lookup
 @inject DialogService DialogService
+
+<Message @ref="notificationComponent" />
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(IsEditMode ? "Edit Document" : "Upload Document")</PageTitle>
@@ -387,6 +389,7 @@
 
     private IList<Lov> documentTypes = new List<Lov>();
     //private List<LookupItem> nominees = new();
+    private Message notificationComponent;
 
     protected override async Task OnInitializedAsync()
     {
@@ -555,7 +558,7 @@
                 var result = m_Document.CreateDocument(document);
                 if (result > 0)
                 {
-                    await DialogService.Alert("Document updated successfully!", "Success");
+                    notificationComponent.Show("Added Summary", "Document has been updated successfully", NotificationSeverity.Success);
                     Navigation.NavigateTo($"/member-documents/{MemberId}");
                 }
             }
@@ -566,7 +569,7 @@
                 var result = m_Document.CreateDocument(document);
                 if (result > 0)
                 {
-                    await DialogService.Alert("Document uploaded successfully!", "Success");
+                    notificationComponent.Show("Added Summary", "Document has been updated successfully", NotificationSeverity.Success);
                     Navigation.NavigateTo($"/member-documents/{MemberId}");
                 }
             }

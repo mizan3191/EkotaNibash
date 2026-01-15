@@ -9,7 +9,7 @@
         public Task<List<MembershipPayment>> GetAllAsync(int memberId)
             => _dbContext.MembershipPayments
             .Include(x => x.EkotaMember)
-            .Where(x => x.EkotaMemberId == memberId)
+            .Where(x => x.EkotaMemberId == memberId && !x.IsInactive)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
 
@@ -35,6 +35,12 @@
         {
             _dbContext.MembershipPayments.Update(payment);
             await _dbContext.SaveChangesAsync();
+        }
+
+        public bool DeletePayment(int id)
+        {
+            ExecuteSqlInterpolated($"UPDATE MembershipPayments SET IsInactive = 1 WHERE Id = {id}");
+            return true;
         }
 
         private void CreatePaymentDocument(MembershipPayment payment)

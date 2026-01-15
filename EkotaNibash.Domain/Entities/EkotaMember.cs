@@ -63,7 +63,7 @@ namespace EkotaNibash.Domain
         public string FileName { get; set; }
 
         [NotMapped]
-        public byte[] File { get; set; }
+        public byte[]? File { get; set; }
 
         // Add this property
         [NotMapped]
@@ -145,7 +145,7 @@ namespace EkotaNibash.Domain
         public string FileName { get; set; }
 
         [NotMapped]
-        public byte[] File { get; set; }
+        public byte[]? File { get; set; }
 
         // Add this property
         [NotMapped]
@@ -246,6 +246,7 @@ namespace EkotaNibash.Domain
             };
         }
 
+        public bool IsInactive { get; set; }
     }
 
     public enum PaymentType

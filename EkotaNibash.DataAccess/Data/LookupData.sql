@@ -67,9 +67,12 @@ IF NOT EXISTS (SELECT 1 FROM DocumentType WHERE Id = 5)
 
 IF NOT EXISTS (SELECT 1 FROM DocumentType WHERE Id = 6)
     INSERT INTO DocumentType (Id, Name, Description) VALUES (6, 'Payment Invoice', 'Payment Invoice');
-
+    
 IF NOT EXISTS (SELECT 1 FROM DocumentType WHERE Id = 7)
     INSERT INTO DocumentType (Id, Name, Description) VALUES (7, 'Other', 'Other');
+    
+IF NOT EXISTS (SELECT 1 FROM DocumentType WHERE Id = 8)
+    INSERT INTO DocumentType (Id, Name, Description) VALUES (8, 'Profile Picture', 'Profile Picture');
 
     -- Insert Expense Types
 
