@@ -4,6 +4,8 @@
 @inject ICompany m_Company
 @inject IDashboard DashboardManager
 
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
 <style>
     :root {
         --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -739,7 +741,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var member in DueMembers.OrderBy(x => x.Name).Take(8))
+                                    @foreach (var member in DueMembers.OrderBy(x => x.Name).Take(ShowAllDueMembers ? DueMembers.Count : 8))
                                     {
                                         <tr>
                                             <td>
@@ -784,10 +786,14 @@
                                 </tbody>
                             </table>
                         </div>
-                        @if (DueMembers.Count > 8)
+                        @if (!ShowAllDueMembers && DueMembers.Count > 8)
                         {
                             <div class="text-center py-2 border-top">
-                                <span class="text-xs text-muted">And @(DueMembers.Count - 8) more members with due payments</span>
+                                <span class="text-xs text-primary"
+                                      style="cursor:pointer;"
+                                      @onclick="() => ShowAllDueMembers = true">
+                                    View all @(DueMembers.Count) members with due payments
+                                </span>
                             </div>
                         }
                     }
@@ -829,7 +835,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var member in AdvanceMembers.OrderBy(x => x.Name).Take(8))
+                                    @foreach (var member in AdvanceMembers.OrderBy(x => x.Name)
+                                                                    .Take(ShowAllAdvanceMembers ? AdvanceMembers.Count : 8))
                                     {
                                         <tr>
                                             <td>
@@ -875,10 +882,14 @@
                                 </tbody>
                             </table>
                         </div>
-                        @if (AdvanceMembers.Count > 8)
+                        @if (!ShowAllAdvanceMembers && AdvanceMembers.Count > 8)
                         {
                             <div class="text-center py-2 border-top">
-                                <span class="text-xs text-muted">And @(AdvanceMembers.Count - 8) more members with advance payments</span>
+                                <span class="text-xs text-primary"
+                                      style="cursor:pointer;"
+                                      @onclick="() => ShowAllAdvanceMembers = true">
+                                    View all @(AdvanceMembers.Count) members with advance payments
+                                </span>
                             </div>
                         }
                     }
@@ -902,6 +913,8 @@
     private bool isLoading = true;
     public List<MemberDueDto> DueMembers { get; set; } = new();
     public List<MemberAdvanceDto> AdvanceMembers { get; set; } = new();
+    private bool ShowAllDueMembers = false;
+    private bool ShowAllAdvanceMembers = false;
 
     protected override async Task OnInitializedAsync()
     {
