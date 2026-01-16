@@ -24,16 +24,12 @@
                             </div>
                             <div class="header-content">
                                 <h1 class="display-6 fw-bold mb-2">Members</h1>
-                                @if (ekotaMembers != null && ekotaMembers.Any())
+                                @if (totalEkotaMembers != null && totalEkotaMembers.Any())
                                 {
                                     <div class="header-meta d-flex align-items-center gap-3">
                                         <div class="meta-item">
                                             <i class="fas fa-users text-primary me-2"></i>
-                                            <span>Total Members: <strong>@ekotaMembers.Count</strong></span>
-                                        </div>
-                                        <div class="meta-item">
-                                            <i class="fas fa-calendar-plus text-success me-2"></i>
-                                            <span>This Month: <strong>@GetThisMonthMembersCount()</strong></span>
+                                            <span>Total Members: <strong>@totalEkotaMembers.Count</strong></span>
                                         </div>
                                         <div class="meta-item">
                                             <i class="fas fa-calendar-alt text-info me-2"></i>
@@ -99,7 +95,11 @@
     </div>
 
     <!-- Members DataGrid -->
-    <div class="row">
+    <div class="card row">
+        <div class="d-flex align-items-center mb-3 px-3 py-2 bg-light border-start border-success border-4 rounded">
+            <i class="bi bi-people-fill text-success fs-4 me-2"></i>
+            <h5 class="mb-0 fw-semibold text-dark">Active Members</h5>
+        </div>
         <div class="col-12">
             @if (ekotaMembers == null || !ekotaMembers.Any())
             {
@@ -178,6 +178,62 @@
             }
         </div>
     </div>
+
+    
+    <div class="card row mt-5">
+        <div class="d-flex align-items-center mb-3 px-3 py-2 bg-light border-start border-danger border-4 rounded">
+            <i class="bi bi-trash-fill text-danger fs-4 me-2"></i>
+            <h5 class="mb-0 fw-semibold text-dark">Deleted Members</h5>
+        </div>
+        <div class="col-12">
+            <RadzenDataGrid @ref="inActivemembersGrid" Data="@InActiveMembers" TItem="EkotaMember" PageSize="10"
+                            AllowPaging="true" AllowSorting="true" AllowFiltering="false"
+                            Class="shadow-sm border-0">
+                <Columns>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.MembershipNo)" Title="Membership No" Width="120px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Title="Photo" Width="80px">
+                        <Template Context="member">
+                            @if (!string.IsNullOrEmpty(member.PhotoBase64))
+                            {
+                                <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden;">
+                                    <img src="@member.PhotoBase64"
+                                         style="width: 100%; height: 100%; object-fit: cover;"
+                                         alt="Member Photo" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="width: 50px; height: 50px; border-radius: 50%; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user text-muted"></i>
+                                </div>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.Name)" Title="Name" Width="180px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.MobileNumber)" Title="Mobile" Width="130px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.ApplicationDate)" Title="Application Date" Width="130px">
+                        <Template Context="member">
+                            @member.ApplicationDate.ToString("dd-MMM-yyyy")
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.DateOfBirth)" Title="Date of Birth" Width="120px">
+                        <Template Context="member">
+                            @member.DateOfBirth.ToString("dd-MMM-yyyy")
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.Occupation)" Title="Occupation" Width="120px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Title="Actions" Width="180px">
+                        <Template Context="member">
+                            <div class="btn-group btn-group-sm">
+                                <RadzenButton Icon="check_circle" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                              Click="() => ConfirmBack(member.Id)" title="Active" />
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -232,9 +288,12 @@
 </style>
 
 @code {
+    private List<EkotaMember> totalEkotaMembers = new();
     private List<EkotaMember> ekotaMembers = new();
     private List<EkotaMember> FilteredMembers = new();
+    private List<EkotaMember> InActiveMembers = new();
     private RadzenDataGrid<EkotaMember> membersGrid;
+    private RadzenDataGrid<EkotaMember> inActivemembersGrid;
 
     // Filter variables
     private string search = string.Empty;
@@ -251,7 +310,9 @@
     private async Task LoadMembers()
     {
         // In real application, you would fetch from API
-        ekotaMembers = await m_Member.GetAllAsync();
+        totalEkotaMembers = await m_Member.GetAllAsync();
+        InActiveMembers = totalEkotaMembers.Where(m => m.IsInactive).ToList();
+        ekotaMembers = totalEkotaMembers.Where(m => !m.IsInactive).ToList();
         FilteredMembers = ekotaMembers;
     }
 
@@ -283,21 +344,21 @@
                     (!string.IsNullOrEmpty(m.Occupation) && m.Occupation.Contains(search, StringComparison.OrdinalIgnoreCase))
                 );
             }
-           
+
             FilteredMembers = query.ToList();
         }
         StateHasChanged();
     }
 
     // Helper method for header stats
-    private int GetThisMonthMembersCount()
-    {
-        var currentDate = DateTime.Now;
-        return ekotaMembers.Count(m =>
-            m.ApplicationDate.Month == currentDate.Month &&
-            m.ApplicationDate.Year == currentDate.Year
-        );
-    }
+    // private int GetThisMonthMembersCount()
+    // {
+    //     var currentDate = DateTime.Now;
+    //     return ekotaMembers.Count(m =>
+    //         m.ApplicationDate.Month == currentDate.Month &&
+    //         m.ApplicationDate.Year == currentDate.Year
+    //     );
+    // }
 
     private void AddNewMember()
     {
@@ -345,7 +406,34 @@
     async Task Delete(int id)
     {
         m_Member.DeleteMember(id);
-        notificationComponent.Show("Delete Summary", "Expense has been Deleted successfully", NotificationSeverity.Error);
+        notificationComponent.Show("Delete Summary", "Member has been Deleted successfully", NotificationSeverity.Error);
+
+        await LoadMembers();
+        StateHasChanged(); // If you are managing the data source manually
+    }
+
+    private async Task ConfirmBack(int id)
+    {
+        var options = new ConfirmOptions()
+        {
+            OkButtonText = "Yes, Active",
+            CancelButtonText = "No, Keep",
+            ShowClose = true,
+        };
+
+        bool? confirmed = await DialogService.Confirm("Are you absolutely sure you want to active this member?", "Active Confirmation", options);
+
+        if (confirmed == true)
+        {
+            await Undo(id);
+        }
+    }
+
+
+    async Task Undo(int id)
+    {
+        m_Member.UndoMember(id);
+        notificationComponent.Show("Active Summary", "Member has been Active successfully", NotificationSeverity.Error);
 
         await LoadMembers();
         StateHasChanged(); // If you are managing the data source manually

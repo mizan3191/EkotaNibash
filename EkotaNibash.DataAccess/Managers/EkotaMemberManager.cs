@@ -9,7 +9,6 @@
         public async Task<List<EkotaMember>> GetAllAsync()
         {
             return await _dbContext.EkotaMembers
-                .Where(m => !m.IsInactive)
                 .Select(m => new
                 {
                     Member = m,
@@ -87,6 +86,12 @@
         public bool DeleteMember(int memberId)
         {
             ExecuteSqlInterpolated($"UPDATE EkotaMembers SET IsInactive = 1 WHERE Id = {memberId}");
+            return true;
+        }
+
+        public bool UndoMember(int memberId)
+        {
+            ExecuteSqlInterpolated($"UPDATE EkotaMembers SET IsInactive = 0 WHERE Id = {memberId}");
             return true;
         }
 

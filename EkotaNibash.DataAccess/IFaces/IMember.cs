@@ -7,5 +7,6 @@
         Task AddAsync(EkotaMember member);
         Task UpdateAsync(EkotaMember member);
         bool DeleteMember(int memberId);
+        bool UndoMember(int memberId);
     }
 }
