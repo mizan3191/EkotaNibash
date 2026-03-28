@@ -6,6 +6,7 @@
         {
         }
 
+        #region Project
         public int CreateProject(Project project)
         {
             AddUpdateEntity(project);
@@ -32,8 +33,9 @@
             return AddUpdateEntity(project);
         }
 
+        #endregion Project
 
-        #region
+        #region Project Expense Details
         public int ProjectExpenseDetailsCreate(ProjectExpenseDetails entity)
         {
             AddUpdateEntity(entity);
@@ -69,9 +71,9 @@
         {
             return AddUpdateEntity(entity);
         }
-        #endregion
+        #endregion Project Expense Details
 
-        #region
+        #region Project Member
         public int ProjectMemberCreate(ProjectMember entity)
         {
             AddUpdateEntity(entity);
@@ -88,17 +90,23 @@
             return FindEntity<ProjectMember>(id);
         }
 
+        public string GetProjectName(int id)
+        {
+            return _dbContext.Projects.FirstOrDefault(x => x.Id == id).Name;
+        }
+
         public async Task<IList<ProjectMember>> GetProjectMembers(int projectId)
         {
             return await _dbContext.ProjectMembers
                 .Where(x => x.ProjectId == projectId)
                 .Include(x => x.EkotaMember)
+                .Include(x => x.Project)
                 .ToListAsync();
         }
 
-        #endregion
+        #endregion Project Member
 
-        #region
+        #region Project Payment
         public int ProjectPaymentCreate(ProjectPayment entity)
         {
             AddUpdateEntity(entity);
@@ -135,6 +143,6 @@
         {
             return AddUpdateEntity(entity);
         }
-        #endregion
+        #endregion Project Payment
     }
 }

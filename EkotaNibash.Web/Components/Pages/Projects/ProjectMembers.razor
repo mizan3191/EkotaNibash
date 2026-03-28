@@ -4,13 +4,193 @@
 
 @inject DialogService DialogService
 <Message @ref="notificationComponent" />
+@inject IProject m_Project
+@inject NavigationManager Navigation
 
-<h3>ProjectMembers</h3>
+
+<Message @ref="notificationComponent" />
+
+<PageTitle>Members List</PageTitle>
+
+<div class="container-fluid">
+
+    <!-- ✅ SAME HEADER -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-primary">
+                                    <i class="fas fa-users text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                @* <h1 class="display-6 fw-bold mb-2">Member Management</h1> *@
+                                <h1 class="display-6 fw-bold mb-2">@ProjectName</h1>
+
+                                <div class="header-meta">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <div class="meta-item">
+                                            <i class="fas fa-database text-primary me-1"></i>
+                                            <span>Total: <strong>@members.Count()</strong></span>
+                                        </div>
+
+                                        <div class="meta-item">
+                                            <i class="fas fa-calendar text-success me-1"></i>
+                                            <span>@DateTime.Now.ToString("MMMM yyyy")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ✅ ACTION BUTTON -->
+                    <div class="col-lg-6">
+                        <div class="header-actions mt-3 mt-lg-0 text-end">
+                            <RadzenButton Text="Add Member"
+                                          Icon="add_circle_outline"
+                                          Click="AddNew"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Size="ButtonSize.Large"
+                                          Class="shadow-sm" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="header-description">
+                            <p class="lead mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Manage all members from here.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ GRID -->
+    <RadzenDataGrid Data="@members" TItem="ProjectMember"
+                    PageSize="10"
+                    AllowPaging="true"
+                    AllowSorting="true">
+
+        <Columns>
+            <RadzenDataGridColumn TItem="ProjectMember" Property="Name" Title="Membership No">
+                <Template Context="m">
+                    @m.EkotaMember.MembershipNo
+                </Template>
+            </RadzenDataGridColumn>
+            
+            <RadzenDataGridColumn TItem="ProjectMember" Property="Name" Title="Name">
+                <Template Context="m">
+                    @m.EkotaMember.Name
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ProjectMember" Property="MobileNumber" Title="Mobile Number">
+                <Template Context="m">
+                    @m.EkotaMember.MobileNumber
+                </Template>
+            </RadzenDataGridColumn>
+
+            <!-- ✅ ONLY DELETE BUTTON -->
+            <RadzenDataGridColumn TItem="ProjectMember" Title="Actions" Width="100px">
+                <Template Context="item">
+                    <RadzenButton Icon="delete"
+                                  ButtonStyle="ButtonStyle.Danger"
+                                  Size="ButtonSize.Small"
+                                  Click="() => ConfirmDelete(item.Id)"
+                                  title="Delete" />
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+<!-- ✅ SAME CSS -->
+<style>
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .icon-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    }
+
+    .header-meta .meta-item {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .header-description {
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        color: #4a5568;
+    }
+</style>
 
 @code {
-    [Parameter]
-    public int ProjectId { get; set; }
+    [Parameter] public int ProjectId { get; set; }
 
+    private IList<ProjectMember> members = new List<ProjectMember>();
     private Message notificationComponent;
 
+    private string ProjectName { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        members = await m_Project.GetProjectMembers(ProjectId);
+
+        ProjectName = m_Project.GetProjectName(ProjectId);
+    }
+
+    private void AddNew()
+    {
+        Navigation.NavigateTo("/members/add");
+    }
+
+    private async Task ConfirmDelete(int id)
+    {
+        var confirmed = await DialogService.Confirm(
+            "Are you sure you want to delete?",
+            "Delete Confirmation");
+
+        if (confirmed == true)
+        {
+            await Delete(id);
+        }
+    }
+
+    private async Task Delete(int id)
+    {
+        m_Project.ProjectMemberDelete(id);
+
+        notificationComponent.Show("Deleted", "Member deleted successfully", NotificationSeverity.Error);
+
+        members = await m_Project.GetProjectMembers(ProjectId);
+    }
 }

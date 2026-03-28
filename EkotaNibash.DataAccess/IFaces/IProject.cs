@@ -8,6 +8,7 @@
         bool DeleteProject(int id);
         Project GetProject(int id);
         Task<IList<Project>> GetAllProjects();
+        string GetProjectName(int id);
         #endregion Project
 
         #region ProjectExpenseDetails
