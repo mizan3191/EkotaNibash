@@ -193,4 +193,21 @@
         public virtual ProjectDocument ProjectDocument { get; set; }
     }
 
+    public class ProjectDocumentListDTO
+    {
+        public int Id { get; set; }
+
+        public string DocumentName { get; set; }
+
+        public string Description { get; set; }
+
+        public string FileName { get; set; }
+
+        public string FileType { get; set; }
+
+        public DateTime? DocumentDate { get; set; }
+
+        public int ProjectId { get; set; }
+    }
+
 }

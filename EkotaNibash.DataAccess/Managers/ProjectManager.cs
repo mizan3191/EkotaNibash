@@ -131,6 +131,19 @@
                 .ToListAsync();
         }
 
+        public async Task<IList<Lov>> GetAllProjectMembers(int projectId)
+        {
+            return await _dbContext.ProjectMembers
+                .Where(pm => pm.ProjectId == projectId)
+                .Include(pm => pm.EkotaMember)
+                .Select(pm => new Lov
+                {
+                    Id = pm.EkotaMember.Id,
+                    Name = pm.EkotaMember.Name
+                })
+                .ToListAsync();
+        }
+
         #endregion Project Member
 
         #region Project Payment
@@ -171,5 +184,49 @@
             return AddUpdateEntity(entity);
         }
         #endregion Project Payment
+
+
+        public IQueryable<ProjectDocumentListDTO> GetAllProjectDocuments(int projectId)
+        {
+            return _dbContext.ProjectDocuments
+                .Where(x => x.ProjectId == projectId)
+                .Select(x => new ProjectDocumentListDTO
+                {
+                    Id = x.Id,
+                    DocumentName = x.DocumentName,
+                    Description = x.Description,
+                    FileName = x.FileName,
+                    FileType = x.FileType,
+                    DocumentDate = x.DocumentDate,
+                    ProjectId = x.ProjectId
+                });
+        }
+
+        public int ProjectDocumentCreate(ProjectDocument project)
+        {
+            AddUpdateEntity(project);
+            return project.Id;
+        }
+
+        public ProjectDocument GetDocument(int id)
+        {
+            return _dbContext.ProjectDocuments.FirstOrDefault(x => x.Id == id);
+        }
+
+        public ProjectDocument DownloadDocument(int id)
+        {
+            return _dbContext.ProjectDocuments.FirstOrDefault(x => x.Id == id);
+        }
+
+        public bool DeleteDocument(int id)
+        {
+            var data = _dbContext.ProjectDocuments.FirstOrDefault(x => x.Id == id);
+            if (data == null) return false;
+
+            _dbContext.ProjectDocuments.Remove(data);
+            _dbContext.SaveChanges();
+            return true;
+        }
+
     }
 }

@@ -26,6 +26,8 @@
         ProjectMember GetProjectMember(int id);
         Task<IList<ProjectMember>> GetProjectMembers(int projectId);
         Task<IList<UniqueMemberDTO>> GetUniqueProjectMembers(int projectId);
+
+        Task<IList<Lov>> GetAllProjectMembers(int projectId);
         #endregion Project Member 
 
         #region
@@ -36,5 +38,14 @@
         Task<IList<ProjectPayment>> GetAllProjectPayments(int projectId, DateTime? startDate, DateTime? endDate);
         #endregion 
 
+
+        IQueryable<ProjectDocumentListDTO> GetAllProjectDocuments(int projectId);
+
+        int ProjectDocumentCreate(ProjectDocument project);
+        ProjectDocument GetDocument(int id);
+
+        ProjectDocument DownloadDocument(int id);
+
+        bool DeleteDocument(int id);
     }
 }

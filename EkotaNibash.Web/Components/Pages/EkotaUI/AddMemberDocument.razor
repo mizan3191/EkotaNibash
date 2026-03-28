@@ -542,6 +542,13 @@
 
         try
         {
+            // ✅ FILE VALIDATION
+            if (uploadedFileBytes == null || uploadedFileBytes.Length == 0)
+        {
+            await DialogService.Alert("Please upload a file before saving.", "Validation Error");
+            return;
+        }
+
             // Handle file upload if new file was selected
             if (!string.IsNullOrEmpty(uploadedFileName) && uploadedFileBytes.Length > 0)
             {

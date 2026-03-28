@@ -2,16 +2,298 @@
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
+@inject IProject m_Project
+@inject NavigationManager Navigation
 @inject DialogService DialogService
+
 <Message @ref="notificationComponent" />
 
-<h3>ProjectPayments</h3>
+<PageTitle>Project Payments</PageTitle>
+
+<div class="container-fluid">
+
+    <!-- ✅ SAME HEADER -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-success">
+                                    <i class="fas fa-money-bill-wave text-white"></i>
+                                </div>
+                            </div>
+                            <div class="header-content">
+                                <h1 class="display-6 fw-bold mb-2">Project Payments</h1>
+
+                                <div class="header-meta">
+                                    <div class="d-flex flex-wrap gap-3">
+
+                                        <div class="meta-item">
+                                            <div class="mt-3 text-end">
+                                                <div class="text-muted small fw-bold">Total Project Invest Amount</div>
+                                                <div class="h4 fw-bold text-success">@TotalMembersAmount.ToString("0.00")</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="meta-item">
+                                            <div class="mt-3 text-end">
+                                                <div class="text-muted small fw-bold">Total Client Paid Amount</div>
+                                                <div class="h4 fw-bold text-success">@TotalClientAmount.ToString("0.00")</div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="header-actions mt-3 mt-lg-0">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+
+                                <RadzenButton Text="Add Payment"
+                                              Icon="add_circle"
+                                              Click="AddPayment"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Large" />
+
+                                <RadzenButton Text="Back to Projects"
+                                              Icon="arrow_back"
+                                              Click="Back"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Large" />
+                            </div>
+
+                            @* <div class="mt-3 text-end">
+                                <div class="text-muted small">Total Amount</div>
+                                <div class="h4 fw-bold text-success">@TotalAmount.ToString("0.00")</div>
+                            </div> *@
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="header-description">
+                            <p class="lead mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Manage all project payments, transactions and financial records.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+
+    
+        <h1 class="display-6 fw-bold mb-2">Members Project Invested </h1>
+        <!-- ✅ Member Invest GRID -->
+        <RadzenDataGrid Data="@MembersInvest" TItem="ProjectPayment"
+                        PageSize="10"
+                        AllowPaging="true"
+                        AllowSorting="true">
+
+            <Columns>
+
+                <RadzenDataGridColumn Property="Date" Title="Date">
+                    <Template Context="p">
+                        @p.DateFormatted
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Type">
+                    <Template Context="p">
+                        @p.ProjectPaymentType.ToString()
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Member">
+                    <Template Context="p">
+                        @(p.EkotaMember?.Name ?? "-")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="Amount" Title="Amount">
+                    <Template Context="p">
+                        <span class="fw-bold text-success">@p.Amount.ToString("0.00")</span>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="Description" Title="Description" />
+
+                <RadzenDataGridColumn Title="Actions">
+                    <Template Context="p">
+
+                        <RadzenButton Icon="edit"
+                                      ButtonStyle="ButtonStyle.Warning"
+                                      Size="ButtonSize.Small"
+                                      Click="() => Edit(p.Id)" />
+
+                        <RadzenButton Icon="delete"
+                                      ButtonStyle="ButtonStyle.Danger"
+                                      Size="ButtonSize.Small"
+                                      Click="() => Delete(p.Id)" />
+
+                    </Template>
+                </RadzenDataGridColumn>
+
+            </Columns>
+
+        </RadzenDataGrid>
+    </div>
+
+    <div class="card mt-5">
+        <h1 class="display-6 fw-bold mb-2">Client Payments </h1>
+    
+        <!-- ✅ Client Paymented GRID -->
+        <RadzenDataGrid Data="@ClientPayments" TItem="ProjectPayment"
+                        PageSize="10"
+                        AllowPaging="true"
+                        AllowSorting="true">
+
+            <Columns>
+
+                <RadzenDataGridColumn Property="Date" Title="Date">
+                    <Template Context="p">
+                        @p.DateFormatted
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Type">
+                    <Template Context="p">
+                        @p.ProjectPaymentType.ToString()
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="Amount" Title="Amount">
+                    <Template Context="p">
+                        <span class="fw-bold text-success">@p.Amount.ToString("0.00")</span>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="Description" Title="Description" />
+
+                <RadzenDataGridColumn Title="Actions">
+                    <Template Context="p">
+
+                        <RadzenButton Icon="edit"
+                                      ButtonStyle="ButtonStyle.Warning"
+                                      Size="ButtonSize.Small"
+                                      Click="() => Edit(p.Id)" />
+
+                        <RadzenButton Icon="delete"
+                                      ButtonStyle="ButtonStyle.Danger"
+                                      Size="ButtonSize.Small"
+                                      Click="() => Delete(p.Id)" />
+
+                    </Template>
+                </RadzenDataGridColumn>
+
+            </Columns>
+
+        </RadzenDataGrid>
+    </div>
+
+</div>
+
+<!-- ✅ SAME CSS -->
+<style>
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .icon-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .header-meta .meta-item {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .header-description {
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        color: #4a5568;
+    }
+</style>
 
 @code {
-    [Parameter] 
-    public int ProjectId { get; set; }
+
+    [Parameter] public int ProjectId { get; set; }
+
+    private IList<ProjectPayment> payments = new List<ProjectPayment>();
+    private IList<ProjectPayment> MembersInvest = new List<ProjectPayment>();
+    private IList<ProjectPayment> ClientPayments = new List<ProjectPayment>();
+    private DateTime? fromDate;
+    private DateTime? toDate;
 
     private Message notificationComponent;
 
-}
+    private double TotalClientAmount => ClientPayments?.Sum(x => x.Amount) ?? 0;
+    private double TotalMembersAmount => MembersInvest?.Sum(x => x.Amount) ?? 0;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        payments = await m_Project.GetAllProjectPayments(ProjectId, fromDate, toDate);
+
+        MembersInvest = payments.Where(x => x.ProjectPaymentType == ProjectPaymentType.Member).ToList();
+        ClientPayments = payments.Where(x => x.ProjectPaymentType == ProjectPaymentType.Client).ToList();
+    }
+
+    private void AddPayment()
+    {
+        Navigation.NavigateTo($"/AddProjectPayment/{ProjectId}");
+    }
+
+    private void Edit(int id)
+    {
+        Navigation.NavigateTo($"/EditProjectPayment/{id}");
+    }
+
+    private async Task Delete(int id)
+    {
+        var confirm = await DialogService.Confirm("Delete this payment?", "Confirm");
+
+        if (confirm == true)
+        {
+            m_Project.ProjectPaymentDelete(id);
+            await LoadData();
+        }
+    }
+
+    private void Back()
+    {
+        Navigation.NavigateTo("/Projects");
+    }
+}

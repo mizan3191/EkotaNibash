@@ -1,15 +1,246 @@
-﻿@page "/AddEditProjectPayment"
+﻿@page "/AddProjectPayment/{ProjectId:int}"
+@page "/EditProjectPayment/{Id:int}"
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
+@inject IProject m_Project
+@inject NavigationManager Navigation
 @inject DialogService DialogService
+
 <Message @ref="notificationComponent" />
 
-<h3>AddEditProjectPayment</h3>
+<PageTitle>@(IsEditMode ? "Edit Payment" : "Add Payment")</PageTitle>
+
+<div class="container-fluid">
+
+    <!-- ✅ HEADER -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+
+                    <h3 class="fw-bold">
+                        @(IsEditMode ? "✏️ Edit Payment" : "💰 Add Payment")
+                    </h3>
+
+                    <RadzenButton Text="Back"
+                                  Icon="arrow_back"
+                                  Click="@(() => Navigation.NavigateTo($"/ProjectPayments/{ProjectId}"))"
+                                  ButtonStyle="ButtonStyle.Light" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ FORM -->
+    <EditForm Model="payment" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+
+                <ValidationSummary class="alert alert-danger" />
+
+                <div class="row g-3">
+
+                    <!-- DATE -->
+                    <div class="col-md-4">
+                        <RadzenLabel Text="Date *" />
+                        <RadzenDatePicker @bind-Value="payment.Date"
+                                          Class="w-100" />
+                    </div>
+
+                    <!-- TYPE -->
+                    <div class="col-md-4">
+                        <RadzenLabel Text="Payment Type *" />
+                        <RadzenDropDown Data="@paymentTypes"
+                                        @bind-Value="payment.ProjectPaymentType"
+                                        TextProperty="Text"
+                                        ValueProperty="Value"
+                                        Change="OnPaymentTypeChange"
+                                        Class="w-100" />
+                    </div>
+
+                    <!-- AMOUNT -->
+                    <div class="col-md-4">
+                        <RadzenLabel Text="Amount *" />
+                        <RadzenNumeric @bind-Value="payment.Amount"
+                                       Class="w-100" />
+                    </div>
+
+                    <!-- MEMBER -->
+                    @if (showMemberDropdown)
+                    {
+                        <div class="col-md-6">
+                            <RadzenLabel Text="Member *" />
+                            <RadzenDropDown Data="@members"
+                                            @bind-Value="payment.EkotaMemberId"
+                                            TextProperty="Name"
+                                            ValueProperty="Id"
+                                            Placeholder="Select member"
+                                            Class="w-100" />
+                            @if (memberRequired && payment.EkotaMemberId == null)
+                            {
+                                <div class="text-danger mt-1">Member is required for this payment type</div>
+                            }
+                        </div>
+                    }
+
+                    <!-- DESCRIPTION -->
+                    <div class="col-12">
+                        <RadzenLabel Text="Description" />
+                        <RadzenTextArea @bind-Value="payment.Description"
+                                        Rows="3"
+                                        Class="w-100" />
+                    </div>
+
+                </div>
+
+                <!-- BUTTON -->
+                <div class="mt-4 text-end">
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Click="Cancel"
+                                  class="me-2" />
+
+                    <RadzenButton Text="@(IsEditMode ? "Update" : "Save")"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Type="submit"
+                                  Disabled="@isSubmitting" />
+                </div>
+
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+<!-- ✅ SAME CSS -->
+<style>
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+</style>
 
 @code {
 
+    [Parameter] public int ProjectId { get; set; }
+    [Parameter] public int Id { get; set; }
+
+    private ProjectPayment payment = new();
+    private bool IsEditMode => Id > 0;
+
+    private bool isSubmitting = false;
+
+    private IList<dynamic> paymentTypes = new List<dynamic>();
+    private IList<Lov> members = new List<Lov>();
+
     private Message notificationComponent;
 
-}
+    private bool showMemberDropdown = false;
+    private bool memberRequired = false;
 
+    protected override async Task OnInitializedAsync()
+    {
+        LoadPaymentTypes();
+
+
+
+        if (IsEditMode)
+        {
+            payment = m_Project.GetProjectPayment(Id);
+            ProjectId = payment.ProjectId;
+
+            if (payment.ProjectPaymentType == ProjectPaymentType.Member)
+            {
+                // jodi Member type hoy → show dropdown, required
+                showMemberDropdown = payment.ProjectPaymentType == ProjectPaymentType.Member;
+                memberRequired = showMemberDropdown;
+            }
+        }
+        else
+        {
+            payment.ProjectId = ProjectId;
+            payment.Date = DateTime.Today;
+            SetMemberVisibility();
+        }
+
+        // TODO: member load (if needed)
+        members = await m_Project.GetAllProjectMembers(ProjectId);
+    }
+
+    private void OnPaymentTypeChange(object value)
+    {
+        SetMemberVisibility();
+    }
+
+    private void SetMemberVisibility()
+    {
+        // jodi Member type hoy → show dropdown, required
+        showMemberDropdown = payment.ProjectPaymentType == ProjectPaymentType.Member;
+        memberRequired = showMemberDropdown;
+
+        // jodi Client type hoy → hide dropdown and clear selection
+        if (!showMemberDropdown)
+        {
+            payment.EkotaMemberId = null;
+        }
+    }
+
+    private void LoadPaymentTypes()
+    {
+        paymentTypes = Enum.GetValues(typeof(ProjectPaymentType))
+            .Cast<ProjectPaymentType>()
+            .Select(x => new
+            {
+                Value = x,
+                Text = x.ToString()
+            }).ToList<dynamic>();
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            // Validation
+            if (memberRequired && payment.EkotaMemberId == null)
+            {
+                notificationComponent.Show("Error", "Please select a member", NotificationSeverity.Error);
+                return;
+            }
+
+            payment.ProjectId = ProjectId;
+
+            if (IsEditMode)
+            {
+                m_Project.ProjectPaymentUpdate(payment);
+            }
+            else
+            {
+                m_Project.ProjectPaymentCreate(payment);
+            }
+
+            notificationComponent.Show("Success", "Saved successfully", NotificationSeverity.Success);
+
+            Navigation.NavigateTo($"/ProjectPayments/{ProjectId}");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert(ex.Message, "Error");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo($"/ProjectPayments/{ProjectId}");
+    }
+}
