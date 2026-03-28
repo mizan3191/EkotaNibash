@@ -1,0 +1,14 @@
+﻿@page "/AddProjectMember"
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject DialogService DialogService
+<Message @ref="notificationComponent" />
+
+<h3>AddProjectMember</h3>
+
+@code {
+
+    private Message notificationComponent;
+
+}

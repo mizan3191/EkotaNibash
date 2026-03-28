@@ -1,0 +1,14 @@
+﻿@page "/AddProjectDocument"
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject DialogService DialogService
+<Message @ref="notificationComponent" />
+
+<h3>AddProjectDocument</h3>
+
+@code {
+
+    private Message notificationComponent;
+
+}

@@ -1,0 +1,15 @@
+﻿@page "/AddEditProjectPayment"
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject DialogService DialogService
+<Message @ref="notificationComponent" />
+
+<h3>AddEditProjectPayment</h3>
+
+@code {
+
+    private Message notificationComponent;
+
+}
+

@@ -4,6 +4,7 @@
 
 @inject DialogService DialogService
 <Message @ref="notificationComponent" />
+@inject NavigationManager Navigation
 
 <div class="container-fluid">
 
@@ -97,17 +98,29 @@
                         </Template>
                     </RadzenDataGridColumn>
 
-                    <RadzenDataGridColumn Title="Actions" Width="120px">
+                    <RadzenDataGridColumn Title="Actions" Width="300px">
                         <Template Context="item">
                             <RadzenButton Icon="edit"
                                           Click="() => Edit(item.Id)"
                                           ButtonStyle="ButtonStyle.Primary"
-                                          Size="ButtonSize.Small" />
+                                          Size="ButtonSize.Medium" />
+
+                            <RadzenButton Icon="people" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                          Click="() => ProjectMembers(item.Id)" style="margin-right: 5px;" title="Members" />
+
+                            <RadzenButton Icon="article" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                          Click="() => ProjectDocuments(item.Id)" style="margin-right: 5px;" title="Documents" />
+
+                            <RadzenButton Icon="receipt_long" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                          Click="() => ProjectExpenses(item.Id)" style="margin-right: 5px;" title="Expenses" />
+
+                            <RadzenButton Icon="payment" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                          Click="() => ProjectPayments(item.Id)" style="margin-right: 5px;" title="Payment" />
 
                             <RadzenButton Icon="delete"
                                           Click="() => ConfirmDelete(item.Id)"
                                           ButtonStyle="ButtonStyle.Danger"
-                                          Size="ButtonSize.Small" />
+                                          Size="ButtonSize.Medium" />
                         </Template>
                     </RadzenDataGridColumn>
 
@@ -279,6 +292,27 @@
     {
         Project = m_Project.GetProject(id);
         showModal = true;
+    }
+
+    private void ProjectDocuments(int id)
+    {
+        Navigation.NavigateTo($"/ProjectDocuments/{id}");
+    }
+
+    private void ProjectExpenses(int id)
+    {
+        Navigation.NavigateTo($"/ProjectExpenses/{id}");
+
+    }
+
+    private void ProjectMembers(int id)
+    {
+        Navigation.NavigateTo($"/ProjectMembers/{id}");
+    }
+
+    private void ProjectPayments(int id)
+    {
+        Navigation.NavigateTo($"/ProjectPayments/{id}");
     }
 
     private async Task HandleSubmit()

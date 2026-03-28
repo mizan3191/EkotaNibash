@@ -1,0 +1,16 @@
+﻿@page "/ProjectMembers/{ProjectId:int}"
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject DialogService DialogService
+<Message @ref="notificationComponent" />
+
+<h3>ProjectMembers</h3>
+
+@code {
+    [Parameter]
+    public int ProjectId { get; set; }
+
+    private Message notificationComponent;
+
+}
