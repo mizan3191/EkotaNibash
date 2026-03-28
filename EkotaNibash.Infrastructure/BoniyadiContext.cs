@@ -17,6 +17,13 @@ namespace EkotaNibash.Infrastructure
         public virtual DbSet<MemberDocument> MemberDocuments { get; set; }
         public virtual DbSet<MemberDocumentSlices> MemberDocumentSlices { get; set; }
 
+        public DbSet<Project> Projects { get; set; }
+        public DbSet<ProjectExpenseDetails> ProjectExpenseDetails { get; set; }
+        public DbSet<ProjectMember> ProjectMembers { get; set; }
+        public DbSet<ProjectPayment> ProjectPayments { get; set; }
+        public DbSet<ProjectDocument> ProjectDocuments { get; set; }
+        public DbSet<ProjectDocumentSlices> ProjectDocumentSlices { get; set; }
+
         #region Lookup Tables        
         public virtual DbSet<ExpenseType> ExpenseType { get; set; }
         public virtual DbSet<DocumentType> DocumentType { get; set; }

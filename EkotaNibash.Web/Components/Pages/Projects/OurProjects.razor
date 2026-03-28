@@ -1,0 +1,333 @@
+﻿@page "/Projects"
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject DialogService DialogService
+<Message @ref="notificationComponent" />
+
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center">
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-primary">
+                                    <i class="fas fa-project-diagram text-white"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="display-6 fw-bold mb-2">Projects</h1>
+
+                                @if (Projects != null && Projects.Any())
+                                {
+                                    var lastProject = Projects.OrderByDescending(x => x.Date).FirstOrDefault();
+
+                                    <div class="header-meta d-flex gap-3">
+                                        <div class="meta-item">
+                                            <i class="fas fa-list-ol text-primary me-2"></i>
+                                            Total Projects: <strong>@Projects.Count()</strong>
+                                        </div>
+
+                                        <div class="meta-item">
+                                            <i class="fas fa-calendar-check text-success me-2"></i>
+                                            Last Project:
+                                            <strong>@lastProject?.Date.ToString("dd MMM yyyy")</strong>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 text-end">
+                        <RadzenButton Text="Add Project"
+                                      Icon="add_circle_outline"
+                                      Click="AddNew"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Size="ButtonSize.Large" />
+                    </div>
+                </div>
+                <div class="header-description mt-4">
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Organize and manage your projects efficiently. Track project timelines, monitor activities, and keep everything structured in one place.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <RadzenTextBox @bind-Value="search" Placeholder="Search..."
+                           Style="width:100%" @oninput="OnSearch" />
+        </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="card">
+        <div class="card-body p-0">
+            <RadzenDataGrid Data="@FilterProjects" TItem="Project"
+                            AllowPaging="true" PageSize="10">
+
+                <Columns>
+
+                    <RadzenDataGridColumn Property="@nameof(Project.DateFormatted)" Title="Date" Width="150px" />
+
+                    <RadzenDataGridColumn Property="@nameof(Project.Name)" Title="Project Name" Width="200px" />
+
+                    <RadzenDataGridColumn Title="Description">
+                        <Template Context="item">
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <div class="text-truncate" style="max-width:200px;">
+                                    @item.Description
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No description</span>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn Title="Actions" Width="120px">
+                        <Template Context="item">
+                            <RadzenButton Icon="edit"
+                                          Click="() => Edit(item.Id)"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Size="ButtonSize.Small" />
+
+                            <RadzenButton Icon="delete"
+                                          Click="() => ConfirmDelete(item.Id)"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Size="ButtonSize.Small" />
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+
+</div>
+
+
+<style>
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .icon-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    .header-meta .meta-item {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .header-content h1 {
+        color: #2d3748;
+    }
+
+    .header-description {
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        color: #4a5568;
+    }
+
+    .expense-type-icon {
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 193, 7, 0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-state {
+        padding: 3rem 0;
+    }
+
+    .input-group-text {
+        border-right: none !important;
+    }
+
+    .border-end-0 {
+        border-right: 0 !important;
+    }
+
+    .border-start-0 {
+        border-left: 0 !important;
+    }
+</style>
+
+@if (showModal)
+{
+    <div class="modal" style="display:block">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h4>@(Project.Id > 0 ? "Edit Project" : "Add Project")</h4>
+                </div>
+
+                <EditForm Model="@Project" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        <div class="row">
+
+                            <div class="col-md-4">
+                                <label>Date</label>
+                                <RadzenDatePicker @bind-Value="Project.Date" Class="w-100" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>Project Name</label>
+                                <InputText @bind-Value="Project.Name" class="form-control" />
+                            </div>
+
+                            <div class="col-md-12 mt-3">
+                                <label>Description</label>
+                                <RadzenTextArea @bind-Value="Project.Description" class="form-control" />
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Type="submit" />
+                        <RadzenButton Text="Cancel" Click="CloseModal" />
+                    </div>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private IProject m_Project { get; set; }
+
+    public IEnumerable<Project> Projects { get; set; } = new List<Project>();
+    public IEnumerable<Project> FilterProjects { get; set; } = new List<Project>();
+
+    private Project Project = new();
+    private bool showModal = false;
+    private string search = "";
+    private Message notificationComponent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        Projects = await m_Project.GetAllProjects();
+        FilterProjects = Projects;
+    }
+
+    private void AddNew()
+    {
+        Project = new Project
+        {
+            Date = DateTime.Now
+        };
+        showModal = true;
+    }
+
+    private void Edit(int id)
+    {
+        Project = m_Project.GetProject(id);
+        showModal = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Project.Id > 0)
+        {
+            m_Project.UpdateProject(Project);
+            notificationComponent.Show("Updated", "Project updated", NotificationSeverity.Success);
+        }
+        else
+        {
+            m_Project.CreateProject(Project);
+            notificationComponent.Show("Added", "Project added", NotificationSeverity.Success);
+        }
+
+        await LoadData();
+        CloseModal();
+    }
+
+    private async Task ConfirmDelete(int id)
+    {
+        bool? confirmed = await DialogService.Confirm("Delete this project?", "Confirm");
+
+        if (confirmed == true)
+        {
+            m_Project.DeleteProject(id);
+            await LoadData();
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        search = e.Value?.ToString();
+
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            FilterProjects = Projects;
+        }
+        else
+        {
+            FilterProjects = Projects.Where(x =>
+                (!string.IsNullOrEmpty(x.Name) && x.Name.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.Description) && x.Description.Contains(search, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+    }
+}

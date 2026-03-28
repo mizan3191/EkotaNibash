@@ -38,6 +38,7 @@ builder.Services.AddScoped<IEkotaMember, EkotaMemberManager>();
 builder.Services.AddScoped<INominee, NomineeManager>();
 builder.Services.AddScoped<IPayment, PaymentManager>();
 builder.Services.AddScoped<IMemberDocument, MemberDocumentManager>();
+builder.Services.AddScoped<IProject, ProjectManager>();
 
 #endregion Services
 
