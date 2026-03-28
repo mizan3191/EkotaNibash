@@ -80,6 +80,18 @@
             return entity.Id;
         }
 
+        public async Task AddProjectMembers(int projectId, List<int> memberIds)
+        {
+            var newMembers = memberIds.Select(id => new ProjectMember
+            {
+                ProjectId = projectId,
+                EkotaMemberId = id
+            });
+
+            await _dbContext.ProjectMembers.AddRangeAsync(newMembers);
+            await _dbContext.SaveChangesAsync();
+        }
+
         public bool ProjectMemberDelete(int id)
         {
             return RemoveEntity<ProjectMember>(id);
@@ -101,6 +113,21 @@
                 .Where(x => x.ProjectId == projectId)
                 .Include(x => x.EkotaMember)
                 .Include(x => x.Project)
+                .ToListAsync();
+        }
+
+        public async Task<IList<UniqueMemberDTO>> GetUniqueProjectMembers(int projectId)
+        {
+            return await _dbContext.EkotaMembers
+                .Where(m => !_dbContext.ProjectMembers
+                    .Any(pm => pm.ProjectId == projectId && pm.EkotaMemberId == m.Id) && !m.IsInactive)
+                .Select(m => new UniqueMemberDTO
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    MembershipNo = m.MembershipNo,
+                    PhoneNumber = m.MobileNumber,
+                })
                 .ToListAsync();
         }
 

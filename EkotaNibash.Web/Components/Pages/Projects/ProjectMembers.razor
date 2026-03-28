@@ -27,7 +27,6 @@
                                 </div>
                             </div>
                             <div class="header-content">
-                                @* <h1 class="display-6 fw-bold mb-2">Member Management</h1> *@
                                 <h1 class="display-6 fw-bold mb-2">@ProjectName</h1>
 
                                 <div class="header-meta">
@@ -154,7 +153,8 @@
 </style>
 
 @code {
-    [Parameter] public int ProjectId { get; set; }
+    [Parameter] 
+    public int ProjectId { get; set; }
 
     private IList<ProjectMember> members = new List<ProjectMember>();
     private Message notificationComponent;
@@ -170,7 +170,7 @@
 
     private void AddNew()
     {
-        Navigation.NavigateTo("/members/add");
+        Navigation.NavigateTo($"/AddProjectMember/{ProjectId}");
     }
 
     private async Task ConfirmDelete(int id)

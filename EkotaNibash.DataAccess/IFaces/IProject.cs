@@ -21,9 +21,11 @@
 
         #region Project Member
         int ProjectMemberCreate(ProjectMember entity);
+        Task AddProjectMembers(int projectId, List<int> memberIds);
         bool ProjectMemberDelete(int id);
         ProjectMember GetProjectMember(int id);
         Task<IList<ProjectMember>> GetProjectMembers(int projectId);
+        Task<IList<UniqueMemberDTO>> GetUniqueProjectMembers(int projectId);
         #endregion Project Member 
 
         #region
