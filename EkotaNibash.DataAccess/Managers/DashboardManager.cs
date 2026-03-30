@@ -154,7 +154,7 @@
         public async Task<List<MemberDueDto>> GetMembersWithDueAsync()
         {
             var members = await _dbContext.EkotaMembers
-                .Where(m => !m.IsInactive)
+                .Where(m => !m.IsInactive && !m.IsNonMember)
                 .Select(m => new
                 {
                     Member = m,
@@ -230,7 +230,7 @@
         public async Task<List<MemberAdvanceDto>> GetMembersWithAdvanceAsync()
         {
             var members = await _dbContext.EkotaMembers
-                .Where(m => !m.IsInactive)
+                .Where(m => !m.IsInactive && !m.IsNonMember)
                 .Select(m => new
                 {
                     Member = m,

@@ -51,14 +51,21 @@
                                 <RadzenButton Text="Upload Document"
                                               Icon="upload"
                                               Click="AddNewDocument"
-                                              ButtonStyle="ButtonStyle.Primary"
+                                              ButtonStyle="ButtonStyle.Secondary"
                                               Size="ButtonSize.Large"
                                               Class="shadow-sm" />
-                                <RadzenButton Text="Back to Members"
+
+                                @* <RadzenButton Text="Back to Members"
                                               Icon="people"
                                               Click="BackToMembers"
                                               ButtonStyle="ButtonStyle.Light"
-                                              Size="ButtonSize.Large" />
+                                              Size="ButtonSize.Large" /> *@
+
+                                <RadzenButton Text="Back to Members"
+                                              Icon="arrow_back"
+                                              Size="ButtonSize.Large"
+                                              Click="BackToMembers"
+                                              ButtonStyle="ButtonStyle.Light" />
                             </div>
                             @if (documents != null)
                             {

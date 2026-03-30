@@ -59,11 +59,17 @@
                     <div class="col-lg-4">
                         <div class="header-actions mt-3 mt-lg-0">
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <RadzenButton Text="Back to Members"
+                                @* <RadzenButton Text="Back to Members"
                                               Icon="list"
                                               Click="Cancel"
                                               ButtonStyle="ButtonStyle.Light"
-                                              Size="ButtonSize.Large" />
+                                              Size="ButtonSize.Large" /> *@
+
+                                <RadzenButton Text="Back to Members"
+                                              Icon="arrow_back"
+                                              Size="ButtonSize.Large"
+                                              Click="Cancel"
+                                              ButtonStyle="ButtonStyle.Light" />
                             </div>
                             @if (IsEditMode && ekotaMember != null && ekotaMember.MobileNumber != null)
                             {
@@ -224,6 +230,19 @@
                     </h6>
 
                     <div class="col-md-4">
+                        <div class="form-group d-flex flex-column">
+        
+                            <!-- Label (Top) -->
+                            <RadzenLabel Text="Non Member" class="mb-2" />
+
+                            <!-- Checkbox (Bottom & Bigger) -->
+                            <RadzenCheckBox @bind-Value="ekotaMember.IsNonMember"
+                                            Style="transform: scale(1.5); margin-top:5px;" />
+            
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
                         <div class="form-group">
                             <RadzenLabel Text="Occupation" />
                             <RadzenTextBox @bind-Value="ekotaMember.Occupation"
@@ -248,9 +267,7 @@
                                            Placeholder="email@example.com" Class="w-100" />
                         </div>
                     </div>
-                </div>
-
-                <div class="row g-3 mb-4">
+                
                     <div class="col-md-4">
                         <div class="form-group">
                             <RadzenLabel Text="Blood Group" />

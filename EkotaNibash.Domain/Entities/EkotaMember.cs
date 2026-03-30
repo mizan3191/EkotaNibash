@@ -57,6 +57,7 @@ namespace EkotaNibash.Domain
         [Display(Name = "Present Address")]
         [StringLength(1000)]
         public string PermanentAddress { get; set; }
+        public bool IsNonMember { get; set; }
 
         // Photo
         [NotMapped]

@@ -40,6 +40,7 @@
                     MobileNumber = x.Member.MobileNumber,
                     OptionalMobileNumber = x.Member.OptionalMobileNumber,
                     Email = x.Member.Email,
+                    IsNonMember = x.Member.IsNonMember,
                     BloodGroup = x.Member.BloodGroup,
                     PresentAddress = x.Member.PresentAddress,
                     PermanentAddress = x.Member.PermanentAddress,

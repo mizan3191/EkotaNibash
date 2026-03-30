@@ -12,205 +12,258 @@
 
 <div class="container-fluid">
 
-    <!-- ✅ SAME HEADER -->
+    <!-- ✅ HEADER -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="dashboard-header">
                 <div class="row align-items-center">
+
                     <div class="col-lg-6">
                         <div class="d-flex align-items-center">
+
                             <div class="header-icon me-4">
                                 <div class="icon-circle bg-gradient-success">
                                     <i class="fas fa-money-bill-wave text-white"></i>
                                 </div>
                             </div>
-                            <div class="header-content">
+
+                            <div>
                                 <h1 class="display-6 fw-bold mb-2">Project Payments</h1>
 
-                                <div class="header-meta">
-                                    <div class="d-flex flex-wrap gap-3">
+                                <div class="header-meta d-flex gap-3">
 
-                                        <div class="meta-item">
-                                            <div class="mt-3 text-end">
-                                                <div class="text-muted small fw-bold">Total Project Invest Amount</div>
-                                                <div class="h4 fw-bold text-success">@TotalMembersAmount.ToString("0.00")</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="meta-item">
-                                            <div class="mt-3 text-end">
-                                                <div class="text-muted small fw-bold">Total Client Paid Amount</div>
-                                                <div class="h4 fw-bold text-success">@TotalClientAmount.ToString("0.00")</div>
-                                            </div>
-                                        </div>
-
+                                    <div class="meta-item">
+                                        Member Invest:
+                                        <strong>@TotalMembersAmount.ToString("0.00")</strong>
                                     </div>
+
+                                    <div class="meta-item">
+                                        Client Paid:
+                                        <strong>@TotalClientAmount.ToString("0.00")</strong>
+                                    </div>
+
+                                    <div class="meta-item">
+                                        <i class="fas fa-home text-success me-1"></i>
+                                        <span>@ProjectName</span>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-6">
-                        <div class="header-actions mt-3 mt-lg-0">
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <div class="col-lg-6 text-end">
 
-                                <RadzenButton Text="Add Payment"
-                                              Icon="add_circle"
-                                              Click="AddPayment"
-                                              ButtonStyle="ButtonStyle.Primary"
-                                              Size="ButtonSize.Large" />
+                        <RadzenButton Text="Add Payment"
+                                      Icon="add_circle"
+                                      Size="ButtonSize.Large"
+                                      Click="AddPayment"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Class="me-2" />
 
-                                <RadzenButton Text="Back to Projects"
-                                              Icon="arrow_back"
-                                              Click="Back"
-                                              ButtonStyle="ButtonStyle.Light"
-                                              Size="ButtonSize.Large" />
-                            </div>
+                        <RadzenButton Text="Back"
+                                      Icon="arrow_back"
+                                      Size="ButtonSize.Large"
+                                      Click="Back"
+                                      ButtonStyle="ButtonStyle.Light" />
 
-                            @* <div class="mt-3 text-end">
-                                <div class="text-muted small">Total Amount</div>
-                                <div class="h4 fw-bold text-success">@TotalAmount.ToString("0.00")</div>
-                            </div> *@
-                        </div>
                     </div>
-                </div>
 
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="header-description">
-                            <p class="lead mb-0">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Manage all project payments, transactions and financial records.
-                            </p>
-                        </div>
-                    </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <div class="card">
+    <!-- ✅ MEMBER GRID -->
+            <div class="card row mt-5">
+                <div class="d-flex align-items-center mb-3 px-3 py-2 bg-light border-start border-danger border-4 rounded">
+                    <i class="bi bi-trash-fill text-danger fs-4 me-2"></i>
+                    <h5 class="mb-0 fw-semibold text-dark">Member Invest</h5>
+                </div>
+                <div class="col-12">
+            <RadzenDataGrid Data="@MembersInvest" TItem="ProjectPayment" AllowPaging="true">
 
-    
-        <h1 class="display-6 fw-bold mb-2">Members Project Invested </h1>
-        <!-- ✅ Member Invest GRID -->
-        <RadzenDataGrid Data="@MembersInvest" TItem="ProjectPayment"
-                        PageSize="10"
-                        AllowPaging="true"
-                        AllowSorting="true">
+                <Columns>
 
-            <Columns>
+                    <RadzenDataGridColumn Title="Date">
+                        <Template Context="p">@p.DateFormatted</Template>
+                    </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn Property="Date" Title="Date">
-                    <Template Context="p">
-                        @p.DateFormatted
-                    </Template>
-                </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Title="Member">
+                        <Template Context="p">@p.EkotaMember?.Name</Template>
+                    </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn Title="Type">
-                    <Template Context="p">
-                        @p.ProjectPaymentType.ToString()
-                    </Template>
-                </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Title="Amount">
+                        <Template Context="p">
+                            <b class="text-success">@p.Amount.ToString("0.00")</b>
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn Title="Member">
-                    <Template Context="p">
-                        @(p.EkotaMember?.Name ?? "-")
-                    </Template>
-                </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Property="Description" Title="Description" />
 
-                <RadzenDataGridColumn Property="Amount" Title="Amount">
-                    <Template Context="p">
-                        <span class="fw-bold text-success">@p.Amount.ToString("0.00")</span>
-                    </Template>
-                </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Title="Actions" Width="100px">
+                        <Template Context="p">
 
-                <RadzenDataGridColumn Property="Description" Title="Description" />
+                            <RadzenButton Icon="edit"
+                                          ButtonStyle="ButtonStyle.Warning"
+                                          Click="() => Edit(p.Id)"
+                                          Size="ButtonSize.Small" />
 
-                <RadzenDataGridColumn Title="Actions">
-                    <Template Context="p">
+                            <RadzenButton Icon="delete"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Click="() => Delete(p.Id)"
+                                          Size="ButtonSize.Small" />
 
-                        <RadzenButton Icon="edit"
-                                      ButtonStyle="ButtonStyle.Warning"
-                                      Size="ButtonSize.Small"
-                                      Click="() => Edit(p.Id)" />
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                        <RadzenButton Icon="delete"
-                                      ButtonStyle="ButtonStyle.Danger"
-                                      Size="ButtonSize.Small"
-                                      Click="() => Delete(p.Id)" />
+                </Columns>
+            </RadzenDataGrid>
 
-                    </Template>
-                </RadzenDataGridColumn>
-
-            </Columns>
-
-        </RadzenDataGrid>
+        </div>
     </div>
 
-    <div class="card mt-5">
-        <h1 class="display-6 fw-bold mb-2">Client Payments </h1>
-    
-        <!-- ✅ Client Paymented GRID -->
-        <RadzenDataGrid Data="@ClientPayments" TItem="ProjectPayment"
-                        PageSize="10"
-                        AllowPaging="true"
-                        AllowSorting="true">
+    <!-- ✅ CLIENT GRID -->
+            <div class="card row mt-5">
+                <div class="d-flex align-items-center mb-3 px-3 py-2 bg-light border-start border-danger border-4 rounded">
+                    <i class="bi bi-trash-fill text-danger fs-4 me-2"></i>
+            <h5 class="mb-0 fw-semibold text-dark">Client Payments</h5>
+                </div>
+                <div class="col-12">
+            <RadzenDataGrid Data="@ClientPayments" TItem="ProjectPayment" AllowPaging="true">
 
-            <Columns>
+                <Columns>
 
-                <RadzenDataGridColumn Property="Date" Title="Date">
-                    <Template Context="p">
-                        @p.DateFormatted
-                    </Template>
-                </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Title="Date">
+                        <Template Context="p">@p.DateFormatted</Template>
+                    </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn Title="Type">
-                    <Template Context="p">
-                        @p.ProjectPaymentType.ToString()
-                    </Template>
-                </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Title="Amount">
+                        <Template Context="p">
+                            <b class="text-success">@p.Amount.ToString("0.00")</b>
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn Property="Amount" Title="Amount">
-                    <Template Context="p">
-                        <span class="fw-bold text-success">@p.Amount.ToString("0.00")</span>
-                    </Template>
-                </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Property="Description" Title="Description" />
 
-                <RadzenDataGridColumn Property="Description" Title="Description" />
+                    <RadzenDataGridColumn Title="Actions" Width="100px">
+                        <Template Context="p">
 
-                <RadzenDataGridColumn Title="Actions">
-                    <Template Context="p">
+                            <RadzenButton Icon="edit"
+                                          ButtonStyle="ButtonStyle.Warning"
+                                          Click="() => Edit(p.Id)"
+                                          Size="ButtonSize.Small" />
 
-                        <RadzenButton Icon="edit"
-                                      ButtonStyle="ButtonStyle.Warning"
-                                      Size="ButtonSize.Small"
-                                      Click="() => Edit(p.Id)" />
+                            <RadzenButton Icon="delete"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Click="() => Delete(p.Id)"
+                                          Size="ButtonSize.Small" />
 
-                        <RadzenButton Icon="delete"
-                                      ButtonStyle="ButtonStyle.Danger"
-                                      Size="ButtonSize.Small"
-                                      Click="() => Delete(p.Id)" />
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                    </Template>
-                </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
 
-            </Columns>
-
-        </RadzenDataGrid>
+        </div>
     </div>
 
 </div>
 
-<!-- ✅ SAME CSS -->
+<!-- ✅ POPUP -->
+@if (showModal)
+{
+    <div class="modal" style="display:block">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h4>@(payment.Id > 0 ? "Edit Payment" : "Add Payment")</h4>
+                </div>
+
+                <EditForm Model="@payment" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        <div class="row g-3">
+
+                            <!-- DATE -->
+                            <div class="col-md-4">
+                                <RadzenLabel Text="Date *" />
+                                <RadzenDatePicker @bind-Value="payment.Date" Class="w-100" />
+                            </div>
+
+                            <!-- TYPE -->
+                            <div class="col-md-4">
+                                <RadzenLabel Text="Payment Type *" />
+                                <RadzenDropDown Data="@paymentTypes"
+                                                @bind-Value="payment.ProjectPaymentType"
+                                                TextProperty="Text"
+                                                ValueProperty="Value"
+                                                Change="OnPaymentTypeChange"
+                                                Class="w-100" />
+                            </div>
+
+                            <!-- AMOUNT -->
+                            <div class="col-md-4">
+                                <RadzenLabel Text="Amount *" />
+                                <RadzenNumeric @bind-Value="payment.Amount" Class="w-100" />
+                            </div>
+
+                            <!-- MEMBER -->
+                            @if (showMemberDropdown)
+                            {
+                                <div class="col-md-6">
+                                    <RadzenLabel Text="Member *" />
+                                    <RadzenDropDown Data="@members"
+                                                    @bind-Value="payment.EkotaMemberId"
+                                                    TextProperty="Name"
+                                                    ValueProperty="Id"
+                                                    Class="w-100" />
+
+                                    @if (payment.EkotaMemberId == null)
+                                    {
+                                        <div class="text-danger">Member required</div>
+                                    }
+                                </div>
+                            }
+
+                            <!-- DESCRIPTION -->
+                            <div class="col-12">
+                                <RadzenLabel Text="Description" />
+                                <RadzenTextArea @bind-Value="payment.Description" Class="w-100" />
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <RadzenButton Text="Save"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Type="submit"
+                                      Class="me-2" />
+
+                        <RadzenButton Text="Cancel"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="CloseModal" />
+                    </div>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ✅ CSS -->
 <style>
     .dashboard-header {
         background: white;
         border-radius: 12px;
         padding: 2rem;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid rgba(0,0,0,0.05);
     }
 
     .icon-circle {
@@ -220,26 +273,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
     }
 
     .bg-gradient-success {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        background: linear-gradient(135deg, #11998e, #38ef7d);
     }
 
-    .header-meta .meta-item {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        background: rgba(0,0,0,0.03);
-        border-radius: 8px;
-        font-size: 0.9rem;
-    }
-
-    .header-description {
-        padding-top: 1rem;
-        border-top: 1px solid rgba(0,0,0,0.1);
-        color: #4a5568;
+    .meta-item {
+        padding: 6px 12px;
+        background: #f3f3f3;
+        border-radius: 6px;
     }
 </style>
 
@@ -250,22 +293,31 @@
     private IList<ProjectPayment> payments = new List<ProjectPayment>();
     private IList<ProjectPayment> MembersInvest = new List<ProjectPayment>();
     private IList<ProjectPayment> ClientPayments = new List<ProjectPayment>();
-    private DateTime? fromDate;
-    private DateTime? toDate;
+
+    private IList<Lov> members = new List<Lov>();
+    private IList<dynamic> paymentTypes = new List<dynamic>();
+
+    private ProjectPayment payment = new();
+    private bool showModal = false;
+    private bool showMemberDropdown = false;
+    private string ProjectName = string.Empty;
 
     private Message notificationComponent;
 
-    private double TotalClientAmount => ClientPayments?.Sum(x => x.Amount) ?? 0;
-    private double TotalMembersAmount => MembersInvest?.Sum(x => x.Amount) ?? 0;
+    private double TotalClientAmount => ClientPayments.Sum(x => x.Amount);
+    private double TotalMembersAmount => MembersInvest.Sum(x => x.Amount);
 
     protected override async Task OnInitializedAsync()
     {
+        LoadTypes();
+        members = await m_Project.GetAllProjectMembers(ProjectId);
         await LoadData();
+        ProjectName = m_Project.GetProjectName(ProjectId);
     }
 
     private async Task LoadData()
     {
-        payments = await m_Project.GetAllProjectPayments(ProjectId, fromDate, toDate);
+        payments = await m_Project.GetAllProjectPayments(ProjectId, null, null);
 
         MembersInvest = payments.Where(x => x.ProjectPaymentType == ProjectPaymentType.Member).ToList();
         ClientPayments = payments.Where(x => x.ProjectPaymentType == ProjectPaymentType.Client).ToList();
@@ -273,23 +325,77 @@
 
     private void AddPayment()
     {
-        Navigation.NavigateTo($"/AddProjectPayment/{ProjectId}");
+        payment = new ProjectPayment
+        {
+            ProjectId = ProjectId,
+            Date = DateTime.Today
+        };
+
+        SetMemberVisibility();
+        showModal = true;
     }
 
     private void Edit(int id)
     {
-        Navigation.NavigateTo($"/EditProjectPayment/{id}");
+        payment = m_Project.GetProjectPayment(id);
+        SetMemberVisibility();
+        showModal = true;
+    }
+
+    private void OnPaymentTypeChange(object value)
+    {
+        SetMemberVisibility();
+    }
+
+    private void SetMemberVisibility()
+    {
+        showMemberDropdown = payment.ProjectPaymentType == ProjectPaymentType.Member;
+
+        if (!showMemberDropdown)
+            payment.EkotaMemberId = null;
+    }
+
+    private void LoadTypes()
+    {
+        paymentTypes = Enum.GetValues(typeof(ProjectPaymentType))
+            .Cast<ProjectPaymentType>()
+            .Select(x => new { Value = x, Text = x.ToString() })
+            .ToList<dynamic>();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (showMemberDropdown && payment.EkotaMemberId == null)
+        {
+            notificationComponent.Show("Error", "Select member", NotificationSeverity.Error);
+            return;
+        }
+
+        if (payment.Id > 0)
+            m_Project.ProjectPaymentUpdate(payment);
+        else
+            m_Project.ProjectPaymentCreate(payment);
+
+        showModal = false;
+        await LoadData();
+
+        notificationComponent.Show("Success", "Saved", NotificationSeverity.Success);
     }
 
     private async Task Delete(int id)
     {
-        var confirm = await DialogService.Confirm("Delete this payment?", "Confirm");
+        var confirm = await DialogService.Confirm("Delete?", "Confirm");
 
         if (confirm == true)
         {
             m_Project.ProjectPaymentDelete(id);
             await LoadData();
         }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
     }
 
     private void Back()

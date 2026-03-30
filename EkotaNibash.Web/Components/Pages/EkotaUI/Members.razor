@@ -183,6 +183,70 @@
     <div class="card row mt-5">
         <div class="d-flex align-items-center mb-3 px-3 py-2 bg-light border-start border-danger border-4 rounded">
             <i class="bi bi-trash-fill text-danger fs-4 me-2"></i>
+            <h5 class="mb-0 fw-semibold text-dark">Non Members</h5>
+        </div>
+        <div class="col-12">
+            <RadzenDataGrid @ref="nonMembersGrid" Data="@NonMembers" TItem="EkotaMember" PageSize="10"
+                            AllowPaging="true" AllowSorting="true" AllowFiltering="false"
+                            Class="shadow-sm border-0">
+                <Columns>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.MembershipNo)" Title="Membership No" Width="120px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Title="Photo" Width="80px">
+                        <Template Context="member">
+                            @if (!string.IsNullOrEmpty(member.PhotoBase64))
+                            {
+                                <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden;">
+                                    <img src="@member.PhotoBase64"
+                                         style="width: 100%; height: 100%; object-fit: cover;"
+                                         alt="Member Photo" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="width: 50px; height: 50px; border-radius: 50%; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user text-muted"></i>
+                                </div>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.Name)" Title="Name" Width="180px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.MobileNumber)" Title="Mobile" Width="130px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.ApplicationDate)" Title="Application Date" Width="130px">
+                        <Template Context="member">
+                            @member.ApplicationDate.ToString("dd-MMM-yyyy")
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.DateOfBirth)" Title="Date of Birth" Width="120px">
+                        <Template Context="member">
+                            @member.DateOfBirth.ToString("dd-MMM-yyyy")
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="EkotaMember" Property="@nameof(EkotaMember.Occupation)" Title="Occupation" Width="120px" />
+                    <RadzenDataGridColumn TItem="EkotaMember" Title="Actions" Width="180px">
+                        <Template Context="member">
+                            <div class="btn-group btn-group-sm">
+                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium"
+                                              Click="() => EditMember(member.Id)" style="margin-right: 5px;" title="Edit" />
+                                <RadzenButton Icon="payment" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                              Click="() => ViewPayments(member.Id)" style="margin-right: 5px;" title="Payments" />
+                                <RadzenButton Icon="article" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Medium"
+                                              Click="() => ViewDocuments(member.Id)" style="margin-right: 5px;" title="Documents" />
+                                <RadzenButton Icon="accessibility" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                                              Click="() => ViewNominees(member.Id)" style="margin-right: 5px;" title="Nominees" />
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Medium"
+                                              Click="() => ConfirmDelete(member.Id)" title="Delete" />
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+
+    
+    <div class="card row mt-5">
+        <div class="d-flex align-items-center mb-3 px-3 py-2 bg-light border-start border-danger border-4 rounded">
+            <i class="bi bi-trash-fill text-danger fs-4 me-2"></i>
             <h5 class="mb-0 fw-semibold text-dark">Deleted Members</h5>
         </div>
         <div class="col-12">
@@ -292,8 +356,10 @@
     private List<EkotaMember> ekotaMembers = new();
     private List<EkotaMember> FilteredMembers = new();
     private List<EkotaMember> InActiveMembers = new();
+    private List<EkotaMember> NonMembers = new();
     private RadzenDataGrid<EkotaMember> membersGrid;
     private RadzenDataGrid<EkotaMember> inActivemembersGrid;
+    private RadzenDataGrid<EkotaMember> nonMembersGrid;
 
     // Filter variables
     private string search = string.Empty;
@@ -311,8 +377,9 @@
     {
         // In real application, you would fetch from API
         totalEkotaMembers = await m_Member.GetAllAsync();
-        InActiveMembers = totalEkotaMembers.Where(m => m.IsInactive).ToList();
-        ekotaMembers = totalEkotaMembers.Where(m => !m.IsInactive).ToList();
+        InActiveMembers = totalEkotaMembers.Where(m => m.IsInactive && !m.IsNonMember).ToList();
+        NonMembers = totalEkotaMembers.Where(m => m.IsNonMember).ToList();
+        ekotaMembers = totalEkotaMembers.Where(m => !m.IsInactive && !m.IsNonMember).ToList();
         FilteredMembers = ekotaMembers;
     }
 

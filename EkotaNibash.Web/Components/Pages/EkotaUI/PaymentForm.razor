@@ -55,15 +55,24 @@
                         <div class="header-actions mt-3 mt-lg-0">
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <RadzenButton Text="Back to Payments"
-                                              Icon="list"
+                                              Icon="arrow_back"
                                               Click="@(() => Navigation.NavigateTo($"/membership-payments/{MemberId}"))"
-                                              ButtonStyle="ButtonStyle.Light"
+                                              ButtonStyle="ButtonStyle.Secondary"
                                               Size="ButtonSize.Large" />
-                                <RadzenButton Text="Back to Members"
+
+                                @* <RadzenButton Text="Back to Members"
                                               Icon="people"
                                               Click="BackToMembers"
                                               ButtonStyle="ButtonStyle.Secondary"
-                                              Size="ButtonSize.Large" />
+                                              Size="ButtonSize.Large" /> *@
+
+                                <RadzenButton Text="Back to Members"
+                                              Icon="arrow_back"
+                                              Size="ButtonSize.Large"
+                                              Click="BackToMembers"
+                                              ButtonStyle="ButtonStyle.Light" />
+
+
                             </div>
                             @if (IsEditMode && payment != null)
                             {

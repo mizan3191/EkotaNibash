@@ -9,6 +9,7 @@
         Project GetProject(int id);
         Task<IList<Project>> GetAllProjects();
         string GetProjectName(int id);
+        bool IsConfirmThisProject(int projectId);
         #endregion Project
 
         #region ProjectExpenseDetails
@@ -16,7 +17,7 @@
         bool ProjectExpenseDetailsUpdate(ProjectExpenseDetails entity);
         bool ProjectExpenseDetailsDelete(int id);
         ProjectExpenseDetails GetProjectExpenseDetails(int id);
-        Task<IList<ProjectExpenseDetails>> GetAllProjectExpenseDetails(int projectId, DateTime? startDate, DateTime? endDate);
+        Task<IList<ProjectExpenseDetails>> GetAllProjectExpenseDetails(int projectId);
         #endregion ProjectExpenseDetails
 
         #region Project Member

@@ -82,6 +82,26 @@
                     <RadzenDataGridColumn Property="@nameof(Project.DateFormatted)" Title="Date" Width="150px" />
 
                     <RadzenDataGridColumn Property="@nameof(Project.Name)" Title="Project Name" Width="200px" />
+                   
+                    <RadzenDataGridColumn Title="Is Locked" Width="200px">
+                        <Template Context="item">
+
+                            @if (!item.IsConfirmed)
+                            {
+                                <span style="color:red; cursor:pointer; font-weight:600"
+                                      @onclick="() => ConfirmProject(item)">
+                                    NO
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color:green; font-weight:600">
+                                    YES
+                                </span>
+                            }
+
+                        </Template>
+                    </RadzenDataGridColumn>
 
                     <RadzenDataGridColumn Title="Description">
                         <Template Context="item">
@@ -105,13 +125,13 @@
                                           ButtonStyle="ButtonStyle.Primary"
                                           Size="ButtonSize.Medium" />
 
-                            <RadzenButton Icon="people" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                            <RadzenButton Icon="people" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Medium"
                                           Click="() => ProjectMembers(item.Id)" style="margin-right: 5px;" title="Members" />
 
-                            <RadzenButton Icon="article" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                            <RadzenButton Icon="article" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Medium"
                                           Click="() => ProjectDocuments(item.Id)" style="margin-right: 5px;" title="Documents" />
 
-                            <RadzenButton Icon="receipt_long" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
+                            <RadzenButton Icon="receipt_long" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium"
                                           Click="() => ProjectExpenses(item.Id)" style="margin-right: 5px;" title="Expenses" />
 
                             <RadzenButton Icon="payment" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Medium"
@@ -120,7 +140,8 @@
                             <RadzenButton Icon="delete"
                                           Click="() => ConfirmDelete(item.Id)"
                                           ButtonStyle="ButtonStyle.Danger"
-                                          Size="ButtonSize.Medium" />
+                                          Size="ButtonSize.Medium"
+                                          Disabled="@item.IsConfirmed" />
                         </Template>
                     </RadzenDataGridColumn>
 
@@ -246,8 +267,14 @@
                     </div>
 
                     <div class="modal-footer">
-                        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Type="submit" />
-                        <RadzenButton Text="Cancel" Click="CloseModal" />
+                        <RadzenButton Text="Save"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Type="submit"
+                                      Class="me-2" />
+
+                        <RadzenButton Text="Cancel"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="CloseModal" />
                     </div>
 
                 </EditForm>
@@ -286,6 +313,24 @@
             Date = DateTime.Now
         };
         showModal = true;
+    }
+
+    private async Task ConfirmProject(Project item)
+    {
+        bool? confirmed = await DialogService.Confirm(
+            "Do you want to confirm this project?",
+            "Confirm Project");
+
+        if (confirmed == true)
+        {
+            item.IsConfirmed = true;
+
+            m_Project.UpdateProject(item);
+
+            notificationComponent.Show("Confirmed", "Project confirmed", NotificationSeverity.Success);
+
+            await LoadData();
+        }
     }
 
     private void Edit(int id)

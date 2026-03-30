@@ -14,6 +14,7 @@
 
         [StringLength(2000)]
         public string Description { get; set; }
+        public bool IsConfirmed { get; set; }
 
         public ICollection<ProjectExpenseDetails> ProjectExpenseDetails { get; set; }
         public ICollection<ProjectMember> ProjectMembers { get; set; }

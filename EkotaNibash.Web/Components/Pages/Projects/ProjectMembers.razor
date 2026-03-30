@@ -3,10 +3,8 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject DialogService DialogService
-<Message @ref="notificationComponent" />
 @inject IProject m_Project
 @inject NavigationManager Navigation
-
 
 <Message @ref="notificationComponent" />
 
@@ -14,49 +12,69 @@
 
 <div class="container-fluid">
 
-    <!-- ✅ SAME HEADER -->
+    <!-- HEADER -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="dashboard-header">
                 <div class="row align-items-center">
-                    <div class="col-lg-6">
+
+                    <div class="col-lg-9">
                         <div class="d-flex align-items-center">
                             <div class="header-icon me-4">
                                 <div class="icon-circle bg-gradient-primary">
                                     <i class="fas fa-users text-white"></i>
                                 </div>
                             </div>
+
                             <div class="header-content">
-                                <h1 class="display-6 fw-bold mb-2">@ProjectName</h1>
+                                <h1 class="display-6 fw-bold mb-2">
+                                    Project Members
+
+                                    @if (IsConfirmed)
+                                    {
+                                        <span class="ms-3 text-danger fs-6 fw-normal">
+                                            (The project is locked. You can not add or remove members.)
+                                        </span>
+                                    }
+                                </h1>
 
                                 <div class="header-meta">
                                     <div class="d-flex flex-wrap gap-3">
+
                                         <div class="meta-item">
                                             <i class="fas fa-database text-primary me-1"></i>
                                             <span>Total: <strong>@members.Count()</strong></span>
                                         </div>
 
                                         <div class="meta-item">
-                                            <i class="fas fa-calendar text-success me-1"></i>
-                                            <span>@DateTime.Now.ToString("MMMM yyyy")</span>
+                                            <i class="fas fa-home text-success me-1"></i>
+                                            <span>@ProjectName</span>
                                         </div>
+                                        
+
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ✅ ACTION BUTTON -->
-                    <div class="col-lg-6">
-                        <div class="header-actions mt-3 mt-lg-0 text-end">
-                            <RadzenButton Text="Add Member"
-                                          Icon="add_circle_outline"
-                                          Click="AddNew"
-                                          ButtonStyle="ButtonStyle.Primary"
-                                          Size="ButtonSize.Large"
-                                          Class="shadow-sm" />
-                        </div>
+                    <!-- ACTION -->
+                    <div class="col-lg-3 text-end">
+                        <RadzenButton Text="Add Member"
+                                      Icon="add_circle_outline"
+                                      Click="AddNew"
+                                      Disabled="@IsConfirmed"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Size="ButtonSize.Large" />
+                                      
+                        <RadzenButton Text="Back"
+                                      Icon="arrow_back"
+                                      Size="ButtonSize.Large"
+                                      Click="Back"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      class="ms-2" />
                     </div>
+
                 </div>
 
                 <div class="row mt-4">
@@ -69,50 +87,98 @@
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 
-    <!-- ✅ GRID -->
+    <!-- GRID -->
     <RadzenDataGrid Data="@members" TItem="ProjectMember"
                     PageSize="10"
                     AllowPaging="true"
                     AllowSorting="true">
 
         <Columns>
-            <RadzenDataGridColumn TItem="ProjectMember" Property="Name" Title="Membership No">
+
+            <RadzenDataGridColumn Title="Membership No">
                 <Template Context="m">
                     @m.EkotaMember.MembershipNo
                 </Template>
             </RadzenDataGridColumn>
-            
-            <RadzenDataGridColumn TItem="ProjectMember" Property="Name" Title="Name">
+
+            <RadzenDataGridColumn Title="Name">
                 <Template Context="m">
                     @m.EkotaMember.Name
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="ProjectMember" Property="MobileNumber" Title="Mobile Number">
+
+            <RadzenDataGridColumn Title="Mobile">
                 <Template Context="m">
                     @m.EkotaMember.MobileNumber
                 </Template>
             </RadzenDataGridColumn>
 
-            <!-- ✅ ONLY DELETE BUTTON -->
-            <RadzenDataGridColumn TItem="ProjectMember" Title="Actions" Width="100px">
+            <RadzenDataGridColumn Title="Actions" Width="100px">
                 <Template Context="item">
                     <RadzenButton Icon="delete"
                                   ButtonStyle="ButtonStyle.Danger"
+                                  Disabled="@IsConfirmed"
                                   Size="ButtonSize.Small"
-                                  Click="() => ConfirmDelete(item.Id)"
-                                  title="Delete" />
+                                  Click="() => ConfirmDelete(item.Id)" />
                 </Template>
             </RadzenDataGridColumn>
 
         </Columns>
     </RadzenDataGrid>
+
 </div>
 
-<!-- ✅ SAME CSS -->
+<!-- ✅ MODAL -->
+@if (showModal)
+{
+    <div class="modal" style="display:block">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h4>Add Members</h4>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="card p-3 shadow-sm">
+                        <RadzenDropDown TValue="IEnumerable<int>"
+                                        @bind-Value="SelectedMemberIds"
+                                        Data="@AvailableMembers"
+                                        TextProperty="Name"
+                                        ValueProperty="Id"
+                                        Placeholder="Search Members..."
+                                        Multiple="true"
+                                        AllowFiltering="true"
+                                        AllowClear="true"
+                                        Chips="true"
+                                        Style="width:100%" />
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <RadzenButton Text="Save"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Type="submit"
+                                  Class="me-2" />
+
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Click="CloseModal" />
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+<!-- CSS -->
 <style>
     .dashboard-header {
         background: white;
@@ -153,44 +219,79 @@
 </style>
 
 @code {
-    [Parameter] 
-    public int ProjectId { get; set; }
+
+    [Parameter] public int ProjectId { get; set; }
 
     private IList<ProjectMember> members = new List<ProjectMember>();
-    private Message notificationComponent;
+    private IList<UniqueMemberDTO> AvailableMembers = new List<UniqueMemberDTO>();
 
-    private string ProjectName { get; set; } = string.Empty;
+    private IEnumerable<int> SelectedMemberIds = new List<int>();
+
+    private string ProjectName = string.Empty;
+
+    private bool showModal = false;
+    private bool IsConfirmed = false;
+
+    private Message notificationComponent;
 
     protected override async Task OnInitializedAsync()
     {
-        members = await m_Project.GetProjectMembers(ProjectId);
+        IsConfirmed = m_Project.IsConfirmThisProject(ProjectId);
+        await LoadData();
+    }
 
+    private async Task LoadData()
+    {
+        members = await m_Project.GetProjectMembers(ProjectId);
         ProjectName = m_Project.GetProjectName(ProjectId);
     }
 
-    private void AddNew()
+    private async Task AddNew()
     {
-        Navigation.NavigateTo($"/AddProjectMember/{ProjectId}");
+        AvailableMembers = await m_Project.GetUniqueProjectMembers(ProjectId);
+        SelectedMemberIds = new List<int>();
+        showModal = true;
+        
+    }
+    
+    private void Back()
+    {
+        Navigation.NavigateTo("/Projects");
+    }
+
+    private async Task SaveMembers()
+    {
+        if (!SelectedMemberIds.Any())
+        {
+            notificationComponent.Show("Warning", "Please select at least one member", NotificationSeverity.Warning);
+            return;
+        }
+
+        await m_Project.AddProjectMembers(ProjectId, SelectedMemberIds.ToList());
+
+        notificationComponent.Show("Success", "Members added successfully", NotificationSeverity.Success);
+
+        await LoadData();
+
+        showModal = false;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
     }
 
     private async Task ConfirmDelete(int id)
     {
-        var confirmed = await DialogService.Confirm(
-            "Are you sure you want to delete?",
-            "Delete Confirmation");
+        var confirmed = await DialogService.Confirm("Delete this member?", "Confirm");
 
         if (confirmed == true)
         {
-            await Delete(id);
+            m_Project.ProjectMemberDelete(id);
+
+            notificationComponent.Show("Deleted", "Member deleted successfully", NotificationSeverity.Error);
+
+            await LoadData();
         }
-    }
-
-    private async Task Delete(int id)
-    {
-        m_Project.ProjectMemberDelete(id);
-
-        notificationComponent.Show("Deleted", "Member deleted successfully", NotificationSeverity.Error);
-
-        members = await m_Project.GetProjectMembers(ProjectId);
     }
 }

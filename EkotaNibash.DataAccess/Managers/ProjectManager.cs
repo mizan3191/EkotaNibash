@@ -33,6 +33,11 @@
             return AddUpdateEntity(project);
         }
 
+        public bool IsConfirmThisProject(int projectId)
+        {
+            return _dbContext.Projects.FirstOrDefault(x => x.Id == projectId).IsConfirmed;
+        }
+
         #endregion Project
 
         #region Project Expense Details
@@ -52,19 +57,10 @@
             return FindEntity<ProjectExpenseDetails>(id);
         }
 
-        public async Task<IList<ProjectExpenseDetails>> GetAllProjectExpenseDetails(int projectId, DateTime? startDate, DateTime? endDate)
+        public async Task<IList<ProjectExpenseDetails>> GetAllProjectExpenseDetails(int projectId)
         {
-            var query = _dbContext.ProjectExpenseDetails
-                .Where(x => x.ProjectId == projectId)
-                .AsQueryable();
-
-            if (startDate.HasValue)
-                query = query.Where(x => x.Date >= startDate.Value);
-
-            if (endDate.HasValue)
-                query = query.Where(x => x.Date <= endDate.Value);
-
-            return await query.ToListAsync();
+            return await _dbContext.ProjectExpenseDetails
+                .Where(x => x.ProjectId == projectId).ToListAsync();
         }
 
         public bool ProjectExpenseDetailsUpdate(ProjectExpenseDetails entity)

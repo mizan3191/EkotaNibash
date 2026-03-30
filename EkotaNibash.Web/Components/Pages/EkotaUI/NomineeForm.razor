@@ -65,11 +65,18 @@
                                               Click="@(() => Navigation.NavigateTo($"/nominees/{MemberId}"))"
                                               ButtonStyle="ButtonStyle.Secondary"
                                               Size="ButtonSize.Large" />
-                                <RadzenButton Text="Back to Members"
+
+                                @* <RadzenButton Text="Back to Members"
                                               Icon="people"
                                               Click="BackToMembers"
                                               ButtonStyle="ButtonStyle.Light"
-                                              Size="ButtonSize.Large" />
+                                              Size="ButtonSize.Large" /> *@
+
+                                <RadzenButton Text="Back to Members"
+                                              Icon="arrow_back"
+                                              Size="ButtonSize.Large"
+                                              Click="BackToMembers"
+                                              ButtonStyle="ButtonStyle.Light" />
                             </div>
                             @if (IsEditMode && nominee != null && !string.IsNullOrEmpty(nominee.Name))
                             {

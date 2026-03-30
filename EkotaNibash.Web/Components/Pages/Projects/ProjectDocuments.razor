@@ -5,6 +5,9 @@
 @inject IProject m_Document
 @inject NavigationManager Navigation
 @inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<Message @ref="notificationComponent" />
 
 <PageTitle>Project Documents</PageTitle>
 
@@ -14,26 +17,61 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h3 class="fw-bold">📁 Project Documents</h3>
+                <div class="row align-items-center">
 
-                    <div>
+                    <div class="col-lg-6">
+                        <div class="d-flex align-items-center">
+        
+                            <!-- ICON -->
+                            <div class="header-icon me-4">
+                                <div class="icon-circle bg-gradient-primary d-flex align-items-center justify-content-center"
+                                     style="width:60px; height:60px; border-radius:50%;">
+                 
+                                    <i class="fas fa-folder-open text-white" style="font-size:24px;"></i>
+            
+                                </div>
+                            </div>
+
+                            <!-- CONTENT -->
+                            <div class="header-content">
+                                <h3 class="fw-bold mb-1">Project Documents</h3>
+
+                                <div class="header-meta">
+                                    <div class="d-flex flex-wrap gap-3">
+
+                                        <div class="meta-item">
+                                            <i class="fas fa-database text-primary me-1"></i>
+                                            <span>Total: <strong>@documents.Count()</strong></span>
+                                        </div>
+
+                                        <div class="meta-item">
+                                            <i class="fas fa-home text-success me-1"></i>
+                                            <span>@ProjectName</span>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ACTION -->
+                    <div class="col-lg-6 text-end">
                         <RadzenButton Text="Upload"
                                       Icon="upload"
-                                      Click="AddNew"
+                                      Click="OpenPopup"
+                                      Size="ButtonSize.Large"
                                       ButtonStyle="ButtonStyle.Primary" />
 
                         <RadzenButton Text="Back"
                                       Icon="arrow_back"
+                                      Size="ButtonSize.Large"
                                       Click="Back"
                                       ButtonStyle="ButtonStyle.Light"
                                       class="ms-2" />
                     </div>
-                </div>
 
-                <div class="mt-3">
-                    <span class="text-muted">Total Documents:</span>
-                    <span class="fw-bold text-primary">@documents.Count</span>
                 </div>
             </div>
         </div>
@@ -54,16 +92,14 @@
 
         <Columns>
 
-            <RadzenDataGridColumn Property="DocumentDate" Title="Date">
+            <RadzenDataGridColumn Title="Date">
                 <Template Context="doc">
                     @(doc.DocumentDate?.ToString("dd-MMM-yyyy"))
                 </Template>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Property="DocumentName" Title="Name" />
-
             <RadzenDataGridColumn Property="FileType" Title="Type" />
-
             <RadzenDataGridColumn Property="Description" Title="Description" />
 
             <RadzenDataGridColumn Title="Actions">
@@ -90,8 +126,93 @@
 
 </div>
 
+<!-- ✅ POPUP -->
+@if (showModal)
+{
+    <div class="modal" style="display:block">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
 
-<!-- ✅ SAME CSS -->
+                <div class="modal-header">
+                    <h4>Upload Document</h4>
+                </div>
+
+                <EditForm Model="@document" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        <ValidationSummary class="alert alert-danger" />
+
+                        <div class="row g-3">
+
+                            <!-- NAME -->
+                            <div class="col-md-4">
+                                <RadzenLabel Text="Document Name *" />
+                                <RadzenTextBox @bind-Value="document.DocumentName"
+                                               Class="w-100" />
+                            </div>
+
+                            <!-- DATE -->
+                            <div class="col-md-4">
+                                <RadzenLabel Text="Date" />
+                                <RadzenDatePicker @bind-Value="document.DocumentDate"
+                                                  Class="w-100" />
+                            </div>
+
+                            <!-- DESCRIPTION -->
+                            <div class="col-12">
+                                <RadzenLabel Text="Description" />
+                                <RadzenTextArea @bind-Value="document.Description"
+                                                Class="w-100" />
+                            </div>
+
+                            <!-- FILE -->
+                            <div class="col-12">
+
+                                <RadzenLabel Text="Upload File *" />
+
+                                @if (string.IsNullOrEmpty(uploadedFileName))
+                                {
+                                    <InputFile OnChange="OnFileChange" />
+                                }
+                                else
+                                {
+                                    <div class="border p-2 d-flex justify-content-between">
+                                        <span>@uploadedFileName (@(uploadedFileSize / 1024) KB)</span>
+
+                                        <RadzenButton Icon="close"
+                                                      ButtonStyle="ButtonStyle.Danger"
+                                                      Click="ClearFile" />
+                                    </div>
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <RadzenButton Text="Save"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Type="submit"
+                                      Class="me-2" />
+
+                        <RadzenButton Text="Cancel"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="CloseModal" />
+                    </div>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+
+<!-- CSS -->
 <style>
     .dashboard-header {
         background: white;
@@ -136,14 +257,21 @@
 
     [Parameter] public int ProjectId { get; set; }
 
-    
-    [Inject] 
-    private IJSRuntime JSRuntime { get; set; }
-
     private List<ProjectDocumentListDTO> documents = new();
     private List<ProjectDocumentListDTO> FilteredDocuments = new();
 
     private string search = "";
+    private string ProjectName = string.Empty;
+
+    private bool showModal = false;
+
+    private ProjectDocument document = new();
+
+    private string uploadedFileName = "";
+    private long uploadedFileSize;
+    private byte[] uploadedBytes;
+
+    private Message notificationComponent;
 
     protected override void OnInitialized()
     {
@@ -154,39 +282,106 @@
     {
         documents = m_Document.GetAllProjectDocuments(ProjectId).ToList();
         FilteredDocuments = documents;
+        ProjectName = m_Document.GetProjectName(ProjectId);
+    }
+
+    private void OpenPopup()
+    {
+        document = new ProjectDocument
+        {
+            ProjectId = ProjectId,
+            DocumentDate = DateTime.Today
+        };
+
+        ClearFile();
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
     }
 
     private void OnSearch(ChangeEventArgs e)
     {
         search = e.Value?.ToString();
 
-        FilteredDocuments = documents
-            .Where(x =>
-                (x.DocumentName != null && x.DocumentName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                (x.Description != null && x.Description.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                (x.FileType != null && x.FileType.Contains(search, StringComparison.OrdinalIgnoreCase))
-            ).ToList();
+        FilteredDocuments = documents.Where(x =>
+            (x.DocumentName?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (x.FileType?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+        ).ToList();
     }
 
-    private void AddNew()
+    private async Task OnFileChange(InputFileChangeEventArgs e)
     {
-        Navigation.NavigateTo($"/AddProjectDocument/{ProjectId}");
+        var file = e.File;
+
+        uploadedFileName = file.Name;
+        uploadedFileSize = file.Size;
+
+        using var stream = file.OpenReadStream(7 * 1024 * 1024);
+        using var ms = new MemoryStream();
+
+        await stream.CopyToAsync(ms);
+        uploadedBytes = ms.ToArray();
+
+        if (!document.IsFileValid(file.Name, uploadedBytes, Path.GetExtension(file.Name)))
+        {
+            await DialogService.Alert("Invalid file!", "Error");
+            ClearFile();
+        }
     }
 
-    private void Back()
+    private void ClearFile()
     {
-        Navigation.NavigateTo($"/Projects");
+        uploadedFileName = "";
+        uploadedBytes = null;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (uploadedBytes == null || uploadedBytes.Length == 0)
+        {
+            // await DialogService.Alert("Upload file required!", "Validation");
+            notificationComponent.Show("Success", "Upload file required!", NotificationSeverity.Error);
+            return;
+        }
+
+        document.File = uploadedBytes;
+        document.FileName = uploadedFileName;
+        document.FileType = Path.GetExtension(uploadedFileName);
+
+        m_Document.ProjectDocumentCreate(document);
+
+        showModal = false;
+        LoadData();
+
+        notificationComponent.Show("Success", "Saved", NotificationSeverity.Success);
+    }
+
+    private async Task Delete(int id)
+    {
+        var confirm = await DialogService.Confirm("Delete?", "Confirm");
+
+        if (confirm == true)
+        {
+            m_Document.DeleteDocument(id);
+            LoadData();
+        }
     }
 
     private async Task View(int id)
     {
-        var document = m_Document.GetDocument(id);
+        var doc = m_Document.GetDocument(id);
 
-        if (document != null && document.File != null)
+        if (doc?.File != null)
         {
-            var mimeType = GetMimeType(document.FileName);
-            var base64 = Convert.ToBase64String(document.File);
-            var js = $"var w = window.open(''); w.document.write('<iframe src=\"data:{mimeType};base64,{base64}\" style=\"width:100%;height:100%;border:none;\"></iframe>');";
+            var base64 = Convert.ToBase64String(doc.File);
+            var mime = GetMimeType(doc.FileName);
+
+            var js = $"window.open('data:{mime};base64,{base64}')";
+
             await JSRuntime.InvokeVoidAsync("eval", js);
         }
     }
@@ -200,43 +395,28 @@
             var base64 = Convert.ToBase64String(doc.File);
 
             var js = $@"
-            var a = document.createElement('a');
-            a.href = 'data:application/octet-stream;base64,{base64}';
-            a.download = '{doc.FileName}';
-            a.click();";
+                var a = document.createElement('a');
+                a.href = 'data:application/octet-stream;base64,{base64}';
+                a.download = '{doc.FileName}';
+                a.click();";
 
-            await JS.InvokeVoidAsync("eval", js);
+            await JSRuntime.InvokeVoidAsync("eval", js);
         }
     }
 
-    
     private string GetMimeType(string fileName)
     {
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        return extension switch
+        return Path.GetExtension(fileName).ToLower() switch
         {
             ".pdf" => "application/pdf",
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".doc" => "application/msword",
-            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            ".txt" => "text/plain",
             _ => "application/octet-stream"
         };
     }
 
-    private async Task Delete(int id)
+    private void Back()
     {
-        var confirm = await DialogService.Confirm("Delete this document?", "Confirm");
-
-        if (confirm == true)
-        {
-            m_Document.DeleteDocument(id);
-            LoadData();
-        }
+        Navigation.NavigateTo("/Projects");
     }
-
-    [Inject] private IJSRuntime JS { get; set; }
 }
